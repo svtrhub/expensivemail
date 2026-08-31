@@ -1,0 +1,555 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --background: 212 68% 9%;
+    --foreground: 210 40% 98%;
+
+    --card: 214 62% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 214 62% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 215 35% 18%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 215 35% 16%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 215 35% 18%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 215 35% 20%;
+    --input: 215 35% 20%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.625rem;
+
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.15);
+
+    /* ═══ LIQUID GLASS VARIANT C — MIDNIGHT NAVY DESIGN TOKENS ═══ */
+    --glass-bg: rgba(14, 22, 40, 0.58);
+    --glass-bg-strong: rgba(10, 17, 32, 0.76);
+    --glass-bg-subtle: rgba(18, 27, 48, 0.36);
+    --glass-solid-fallback: #0b1220;
+    --glass-blur: 28px;
+    --glass-sat: 185%;
+    --glass-bright: 0.95;
+    --glass-noise-opacity: 0.055;
+    --glass-border-top: rgba(163, 226, 255, 0.45);
+    --glass-border-bottom: rgba(4, 10, 22, 0.6);
+    --glass-border-width: 1px;
+    --glass-specular-color: rgba(180, 232, 255, 0.5);
+    --glass-specular-opacity: 0.45;
+    --glass-scrim: rgba(6, 12, 24, 0.48);
+    --glass-text-primary: #eaf4ff;
+    --glass-text-secondary: rgba(234, 244, 255, 0.68);
+    --glass-icon-fill: #d6ecff;
+    --glass-accent-cyan: #6fe0ff;
+    /* Deprecated compat aliases */
+    --glass-bg-hover: rgba(13, 46, 120, 0.45);
+    --glass-border: rgba(163, 226, 255, 0.3);
+    --glass-border-hover: rgba(163, 226, 255, 0.55);
+    --glass-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.35), 0 8px 28px rgba(2, 10, 30, 0.55),
+      0 28px 64px rgba(2, 8, 24, 0.55), inset 0 1px 0 rgba(163, 226, 255, 0.18),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.55);
+    --glass-radius-sm: 12px;
+    --glass-radius-md: 20px;
+    --glass-radius-lg: 28px;
+    --glass-radius-pill: 999px;
+  }
+
+  html,
+  body {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family:
+      'Plus Jakarta Sans',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
+    background-color: #051c2c;
+    color: #e2e8f0;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-editorial {
+    font-family: 'Lora', Georgia, Cambria, 'Times New Roman', serif;
+    letter-spacing: -0.02em;
+    color: #f8fafc;
+  }
+}
+
+/* Glassmorphism Keyframe Animations */
+@keyframes islandGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.35),
+      0 8px 28px rgba(2, 10, 30, 0.55),
+      inset 0 1px 0 rgba(163, 226, 255, 0.18),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.55);
+    border-color: rgba(163, 226, 255, 0.28);
+  }
+  50% {
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.35),
+      0 8px 32px rgba(2, 10, 30, 0.7),
+      0 0 28px rgba(111, 224, 255, 0.18),
+      inset 0 1px 0 rgba(163, 226, 255, 0.42),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.55);
+    border-color: rgba(163, 226, 255, 0.45);
+  }
+}
+
+@keyframes glassShimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-island-glow {
+  animation: islandGlow 4s ease-in-out infinite;
+}
+
+/* Glassmorphism & High-Contrast Legibility Utilities */
+.bg-cosmos-viewport {
+  position: relative;
+  background-color: #030d18;
+  background-image:
+    url('/bluecosmos.webp'),
+    radial-gradient(circle at 50% 0%, rgba(34, 81, 255, 0.4), transparent 70%);
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100dvh;
+}
+
+.text-readability-shadow {
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.75),
+    0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LIQUID GLASS VARIANT C — 5-LAYER OPTICAL STACK UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Fallback: solid surface for browsers without backdrop-filter support */
+.glass-panel,
+.glass-card,
+.glass-modal,
+.glass-navbar {
+  background: var(--glass-solid-fallback);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  /* ── Panel / Card (standard glass surface, e.g. dashboard sections) ── */
+  .glass-panel,
+  .glass-card {
+    position: relative;
+    isolation: isolate;
+    background: var(--glass-bg);
+    border: 1px solid rgba(163, 226, 255, 0.28);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat))
+      brightness(var(--glass-bright));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat))
+      brightness(var(--glass-bright));
+    color: var(--glass-text-primary);
+  }
+
+  /* Layer 4: Specular highlight — ice-cyan 135° sweep (top-left corner) */
+  .glass-panel::before,
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(180, 232, 255, 0.45) 0%,
+      rgba(180, 232, 255, 0.08) 35%,
+      transparent 50%
+    );
+    opacity: var(--glass-specular-opacity);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity 200ms ease;
+  }
+
+  /* Layer 5: Noise grain — breaks banding, adds material tooth */
+  .glass-panel::after,
+  .glass-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: var(--glass-noise-opacity);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Liquid press — specular shifts on active */
+  .glass-panel:active::before,
+  .glass-card:active::before {
+    opacity: 0.6;
+    background: linear-gradient(
+      148deg,
+      rgba(180, 232, 255, 0.55) 0%,
+      rgba(180, 232, 255, 0.1) 38%,
+      transparent 52%
+    );
+  }
+
+  /* ── Modal (heavy blur, strongest bg for legibility) ── */
+  .glass-modal {
+    position: relative;
+    isolation: isolate;
+    background: var(--glass-bg-strong);
+    border: 1px solid rgba(163, 226, 255, 0.25);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(36px) saturate(var(--glass-sat))
+      brightness(var(--glass-bright));
+    -webkit-backdrop-filter: blur(36px) saturate(var(--glass-sat))
+      brightness(var(--glass-bright));
+    color: var(--glass-text-primary);
+  }
+
+  .glass-modal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(180, 232, 255, 0.35) 0%,
+      rgba(180, 232, 255, 0.05) 35%,
+      transparent 50%
+    );
+    opacity: 0.35;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glass-modal::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: var(--glass-noise-opacity);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Navbar (heaviest blur — floating dock spec) ── */
+  .glass-navbar {
+    position: relative;
+    background: rgba(14, 22, 40, 0.62);
+    border: 1px solid rgba(163, 226, 255, 0.28);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(48px) saturate(200%) brightness(0.92);
+    -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(0.92);
+    color: var(--glass-text-primary);
+  }
+
+  .glass-navbar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(180, 232, 255, 0.28) 0%,
+      rgba(180, 232, 255, 0.04) 35%,
+      transparent 50%
+    );
+    opacity: 0.55;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glass-navbar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Dropdown panel (popover, menu) ── */
+  .glass-dropdown {
+    isolation: isolate;
+    background: rgba(10, 17, 32, 0.92);
+    border: 1px solid rgba(163, 226, 255, 0.22);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(32px) saturate(var(--glass-sat))
+      brightness(var(--glass-bright));
+    -webkit-backdrop-filter: blur(32px) saturate(var(--glass-sat))
+      brightness(var(--glass-bright));
+    color: var(--glass-text-primary);
+  }
+
+  .glass-dropdown::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(180, 232, 255, 0.2) 0%,
+      transparent 40%
+    );
+    opacity: 0.4;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+/* ── Content wrapper — ensures content paints above pseudo-elements ── */
+.glass-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* prefers-reduced-transparency: replace glass with solid fallback */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel,
+  .glass-card,
+  .glass-modal,
+  .glass-navbar,
+  .glass-dropdown {
+    background: var(--glass-solid-fallback) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .glass-panel::before,
+  .glass-panel::after,
+  .glass-card::before,
+  .glass-card::after,
+  .glass-modal::before,
+  .glass-modal::after,
+  .glass-navbar::before,
+  .glass-navbar::after,
+  .glass-dropdown::before {
+    display: none !important;
+  }
+}
+
+/* Base Form Control Theming with Translucent Glass */
+.dark input:not([type='checkbox']):not([type='radio']),
+.dark select,
+.dark textarea,
+:root.dark input:not([type='checkbox']):not([type='radio']),
+:root.dark select,
+:root.dark textarea {
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f8fafc;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus,
+:root.dark input:focus,
+:root.dark select:focus,
+:root.dark textarea:focus {
+  border-color: #6fe0ff;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(111, 224, 255, 0.3);
+}
+
+/* Focus Visible Polyfill & Keyboard Indicators */
+:focus-visible {
+  outline: 2px solid #6fe0ff !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(111, 224, 255, 0.2) !important;
+}
+
+/* Tactile Button Feedback */
+button,
+[role='button'],
+a {
+  touch-action: manipulation;
+}
+
+button:active,
+[role='button']:active {
+  transform: scale(0.97);
+  transition: transform 100ms var(--ease-out);
+}
+
+/* Custom scrollbar for executive style */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #081b2e;
+}
+
+.dark ::-webkit-scrollbar-track,
+:root.dark ::-webkit-scrollbar-track {
+  background: #081b2e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb,
+:root.dark ::-webkit-scrollbar-thumb {
+  background: #1e3a5f;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover,
+:root.dark ::-webkit-scrollbar-thumb:hover {
+  background: #2251ff;
+}
+
+/* Animation utilities for Emil Kowalski's smooth popovers */
+@keyframes popoverEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ─── Global Focus-Visible Guidelines (Web Interface Guidelines Compliance) ─── */
+:focus-visible {
+  outline: 2px solid #6fe0ff !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 12px rgba(111, 224, 255, 0.4) !important;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Accessibility: Reduced Motion ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-pulse,
+  .animate-bounce,
+  .animate-spin,
+  .animate-ping {
+    animation: none !important;
+  }
+}
+
+/* ─── Hover-Only Animations ─────────────────────────────────────── */
+/* Only apply hover-dependent scale/transform effects on devices that support hover */
+@media (hover: none) {
+  .group:hover .group-hover\:scale-105,
+  .group:hover .group-hover\:scale-110 {
+    transform: none !important;
+  }
+}
+
+/* Dedicated Print Stylesheet for Executive Statement */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Hide app navigation, buttons, modals backdrops, and interactive controls when printing */
+  header,
+  nav,
+  aside,
+  .print\:hidden,
+  button,
+  #export-data-btn,
+  #view-sync-activity-btn {
+    display: none !important;
+  }
+
+  /* Force modal container to take full page flow without clipping */
+  .fixed.inset-0 {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  #report-statement-modal {
+    max-width: 100% !important;
+    max-height: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Ensure colors and backgrounds print accurately */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

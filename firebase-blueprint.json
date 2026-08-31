@@ -1,0 +1,255 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with financial preferences and entity configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "fullName": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "format": "email", "maxLength": 255 },
+        "phoneNumber": { "type": "string", "maxLength": 30 },
+        "entityType": {
+          "type": "string",
+          "enum": ["personal", "business", "freelance", "corporate"]
+        },
+        "companyName": { "type": "string", "maxLength": 120 },
+        "jobTitle": { "type": "string", "maxLength": 100 },
+        "defaultCurrency": { "type": "string", "maxLength": 10 },
+        "defaultLanguage": { "type": "string", "enum": ["en", "id"] },
+        "monthlyBudgetGoal": { "type": "number" },
+        "selectedInstitutions": { "type": "array" },
+        "syncCadence": {
+          "type": "string",
+          "enum": ["realtime", "hourly", "daily"]
+        },
+        "autoApprovalThreshold": { "type": "number" },
+        "enableLargeTxAlerts": { "type": "boolean" },
+        "largeTxThreshold": { "type": "number" },
+        "enableWeeklyDigest": { "type": "boolean" },
+        "avatarUrl": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "fullName",
+        "email",
+        "defaultCurrency",
+        "defaultLanguage"
+      ]
+    },
+    "BankAccount": {
+      "title": "BankAccount",
+      "description": "Linked financial institution account or digital wallet",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "institution": { "type": "string", "maxLength": 80 },
+        "accountNumberMask": { "type": "string", "maxLength": 30 },
+        "type": {
+          "type": "string",
+          "enum": ["checking", "credit", "savings", "digital_wallet"]
+        },
+        "balance": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "color": { "type": "string", "maxLength": 30 },
+        "iconName": { "type": "string", "maxLength": 50 },
+        "lastSyncedAt": { "type": "string", "format": "date-time" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "institution",
+        "type",
+        "balance",
+        "currency",
+        "active"
+      ]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Parsed transaction, expense, or receipt record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "emailId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "merchant": { "type": "string", "maxLength": 150 },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "category": { "type": "string", "maxLength": 60 },
+        "date": { "type": "string", "maxLength": 30 },
+        "time": { "type": "string", "maxLength": 20 },
+        "type": { "type": "string", "enum": ["debit", "credit"] },
+        "bankAccountId": { "type": "string", "maxLength": 128 },
+        "bankAccountName": { "type": "string", "maxLength": 100 },
+        "paymentMethod": { "type": "string", "maxLength": 100 },
+        "confidenceScore": { "type": "number" },
+        "isRecurring": { "type": "boolean" },
+        "recurringFrequency": {
+          "type": "string",
+          "enum": ["monthly", "yearly", "weekly"]
+        },
+        "isTaxDeductible": { "type": "boolean" },
+        "isBusinessExpense": { "type": "boolean" },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "tags": { "type": "array" },
+        "source": {
+          "type": "string",
+          "enum": ["gmail_sync", "manual_entry", "mock_feed"]
+        },
+        "fingerprint": { "type": "string", "maxLength": 128 },
+        "schemaVersion": { "type": "number" },
+        "verifiedByUser": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "userId",
+        "title",
+        "merchant",
+        "amount",
+        "currency",
+        "category",
+        "date",
+        "type",
+        "source"
+      ]
+    },
+    "BudgetCategory": {
+      "title": "BudgetCategory",
+      "description": "Monthly budget limit per expense category",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "category": { "type": "string", "maxLength": 60 },
+        "monthlyLimit": { "type": "number" },
+        "color": { "type": "string", "maxLength": 30 }
+      },
+      "required": ["id", "userId", "category", "monthlyLimit", "color"]
+    },
+    "SyncLog": {
+      "title": "SyncLog",
+      "description": "Log entry tracking email scan and parsing activity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": {
+          "type": "string",
+          "enum": ["in_progress", "success", "failed", "idle"]
+        },
+        "emailsScanned": { "type": "number" },
+        "expensesFound": { "type": "number" },
+        "totalAmountParsed": { "type": "number" },
+        "message": { "type": "string", "maxLength": 500 }
+      },
+      "required": [
+        "id",
+        "userId",
+        "timestamp",
+        "status",
+        "emailsScanned",
+        "expensesFound",
+        "totalAmountParsed",
+        "message"
+      ]
+    },
+    "IngestionRule": {
+      "title": "IngestionRule",
+      "description": "Automated categorization and ingestion rule",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "keyword": { "type": "string", "maxLength": 100 },
+        "matchField": {
+          "type": "string",
+          "enum": ["merchant", "sender", "subject", "any"]
+        },
+        "assignCategory": { "type": "string", "maxLength": 60 },
+        "autoTags": { "type": "array" },
+        "isBusinessExpense": { "type": "boolean" },
+        "isTaxDeductible": { "type": "boolean" },
+        "enabled": { "type": "boolean" }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "keyword",
+        "matchField",
+        "assignCategory",
+        "enabled"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile with entity settings and PII isolation"
+    },
+    "/users/{userId}/bank_accounts/{accountId}": {
+      "schema": "BankAccount",
+      "description": "User's connected banking accounts and digital wallets"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "User's parsed and manual expense items"
+    },
+    "/users/{userId}/settings/config": {
+      "description": "Coalesced user preferences, budgets, ingestion rules, and domain rules"
+    },
+    "/users/{userId}/expense_fingerprints/{hash}": {
+      "description": "O(1) direct document existence check collection for deduplication hashes"
+    },
+    "/users/{userId}/monthly_summaries/{monthKey}": {
+      "description": "Atomic monthly summary rollups aggregated via FieldValue.increment()"
+    },
+    "/users/{userId}/budgets/{budgetId}": {
+      "schema": "BudgetCategory",
+      "description": "User's monthly category budgets"
+    },
+    "/users/{userId}/sync_logs/{logId}": {
+      "schema": "SyncLog",
+      "description": "User's email sync audit logs"
+    },
+    "/users/{userId}/ingestion_rules/{ruleId}": {
+      "schema": "IngestionRule",
+      "description": "User's smart receipt ingestion and auto-categorisation rules"
+    }
+  },
+  "indexes": [
+    {
+      "collectionGroup": "expenses",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "date", "order": "DESCENDING" }]
+    },
+    {
+      "collectionGroup": "expenses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "expenses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "merchant", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    }
+  ]
+}

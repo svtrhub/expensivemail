@@ -1,0 +1,189 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helper Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validations
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'fullName', 'email', 'defaultCurrency', 'defaultLanguage']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 100 &&
+        data.email is string && data.email.size() > 0 && data.email.size() <= 255 &&
+        data.defaultCurrency is string && data.defaultCurrency.size() <= 10 &&
+        data.defaultLanguage in ['en', 'id'];
+    }
+
+    function isValidBankAccount(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'name', 'institution', 'type', 'balance', 'currency', 'active']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId == userId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.institution is string && data.institution.size() <= 80 &&
+        data.type in ['checking', 'credit', 'savings', 'digital_wallet'] &&
+        data.balance is number && data.balance >= -1000000000000 && data.balance <= 1000000000000 &&
+        data.currency is string && data.currency.size() <= 10 &&
+        data.active is bool;
+    }
+
+    function isValidExpense(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'merchant', 'amount', 'currency', 'category', 'date', 'type', 'source']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId == userId &&
+        data.title is string && data.title.size() <= 200 &&
+        data.merchant is string && data.merchant.size() <= 150 &&
+        data.amount is number && data.amount >= 0 && data.amount <= 1000000000000 &&
+        data.currency is string && data.currency.size() <= 10 &&
+        data.category is string && data.category.size() <= 60 &&
+        data.date is string && data.date.size() <= 30 &&
+        data.type in ['debit', 'credit'] &&
+        data.source in ['gmail_sync', 'manual_entry', 'mock_feed'];
+    }
+
+    function isValidBudget(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'category', 'monthlyLimit', 'color']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId == userId &&
+        data.category is string && data.category.size() <= 60 &&
+        data.monthlyLimit is number && data.monthlyLimit >= 0 && data.monthlyLimit <= 1000000000000 &&
+        data.color is string && data.color.size() <= 30;
+    }
+
+    function isValidSyncLog(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'timestamp', 'status', 'emailsScanned', 'expensesFound', 'totalAmountParsed', 'message']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId == userId &&
+        data.status in ['in_progress', 'success', 'failed', 'idle'] &&
+        data.emailsScanned is number && data.emailsScanned >= 0 &&
+        data.expensesFound is number && data.expensesFound >= 0 &&
+        data.totalAmountParsed is number && data.totalAmountParsed >= 0 &&
+        data.message is string && data.message.size() <= 500;
+    }
+
+    function isValidIngestionRule(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'name', 'keyword', 'matchField', 'assignCategory', 'enabled']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId == userId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.keyword is string && data.keyword.size() > 0 && data.keyword.size() <= 100 &&
+        data.matchField in ['merchant', 'sender', 'subject', 'any'] &&
+        data.assignCategory is string && data.assignCategory.size() <= 60 &&
+        data.enabled is bool;
+    }
+
+    // User Profile
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false; // Blanket user listing forbidden for privacy & anti-scraping
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && incoming().id == userId;
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && incoming().id == userId;
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Bank Accounts Sub-collection
+      match /bank_accounts/{accountId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(accountId) && isValidBankAccount(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(accountId) && isValidBankAccount(incoming(), userId) && incoming().id == existing().id;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(accountId);
+      }
+
+      // Expenses Sub-collection
+      match /expenses/{expenseId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(expenseId) && isValidExpense(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(expenseId) && isValidExpense(incoming(), userId) && incoming().id == existing().id;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(expenseId);
+      }
+
+      // Budgets Sub-collection
+      match /budgets/{budgetId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(budgetId) && isValidBudget(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(budgetId) && isValidBudget(incoming(), userId) && incoming().id == existing().id;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(budgetId);
+      }
+
+      // Sync Logs Sub-collection
+      match /sync_logs/{logId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(logId) && isValidSyncLog(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(logId) && isValidSyncLog(incoming(), userId) && incoming().id == existing().id;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(logId);
+      }
+
+      // Settings / Coalesced Config (Fix Test 9: On create, userTrustedRules/userUntrustedRules must be absent or empty [])
+      match /settings/{docId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) &&
+          (!incoming().keys().hasAny(['userTrustedRules', 'userUntrustedRules']) ||
+           (incoming().get('userTrustedRules', []).size() == 0 && incoming().get('userUntrustedRules', []).size() == 0));
+        allow update: if isOwner(userId) && isValidId(userId) &&
+          (!incoming().keys().hasAny(['userTrustedRules', 'userUntrustedRules']) ||
+           (resource != null && incoming().userTrustedRules == existing().userTrustedRules && incoming().userUntrustedRules == existing().userUntrustedRules));
+        allow delete: if false;
+      }
+
+
+
+
+      // Dedicated Fingerprints Collection (O(1) Deduplication)
+      match /expense_fingerprints/{fpHash} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId);
+        allow update, delete: if false; // Fingerprints are immutable once recorded
+      }
+
+      // Monthly Summaries Aggregation Rollups (Atomic increment)
+      match /monthly_summaries/{monthKey} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create, update: if isOwner(userId) && isValidId(userId);
+        allow delete: if isOwner(userId) && isValidId(userId);
+      }
+
+      // User Trusted Domain Rules (SERVER-WRITE-ONLY)
+      match /user_trusted_domain_rules/{ruleId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow write: if false; // Server-write-only (Cloud Functions / Admin SDK)
+      }
+
+      // User Untrusted Domain Rules (SERVER-WRITE-ONLY)
+      match /user_untrusted_domain_rules/{ruleId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow write: if false; // Server-write-only (Cloud Functions / Admin SDK)
+      }
+
+      // Ingestion Rules Sub-collection
+      match /ingestion_rules/{ruleId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(ruleId) && isValidIngestionRule(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(ruleId) && isValidIngestionRule(incoming(), userId) && incoming().id == existing().id;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(ruleId);
+      }
+    }
+  }
+}
+

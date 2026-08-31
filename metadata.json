@@ -1,0 +1,6 @@
+{
+  "name": "Expensive Mail",
+  "description": "Automatic expense tracker that syncs bank notifications, e-receipts, and subscriptions from your mail inbox with anomaly detection, resolution tools, in-app notifications, automated live exchange rates, and multi-currency switching.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

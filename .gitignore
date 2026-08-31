@@ -1,0 +1,36 @@
+# Environment & Secret files (CRITICAL SECURITY)
+.env
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+*.crt
+*.secret
+credentials.json
+
+# Node dependencies
+node_modules/
+
+# Production build output
+dist/
+build/
+
+# Test, Scratch & Temp directories
+scratch/
+coverage/
+.tmp/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & IDE metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
