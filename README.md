@@ -19,17 +19,17 @@ ExpensiveMail parses transaction receipts from bank emails and creates structure
 
 The app uses Google Gemini AI (`@google/genai`) alongside offline regex parsers to handle rate limits and offline modes. It supports 18 banking feeds and digital wallets across 6 currencies (IDR, USD, EUR, GBP, SGD, JPY) with full localization in English and Bahasa Indonesia.
 
-### ⚡ Key Features
+### Key Features
 
-- 🤖 **Dual AI + Regex Parsing**: Gemini AI with offline fallback for reliability
-- 🏦 **18+ Banking Feeds**: Supports BCA, Mandiri, BNI, BRI, BSI, BTN, Jenius, CIMB, Jago, GoPay, OVO, ShopeePay, DANA, LinkAja, GrabPay, Stripe, PayPal, Wise
-- 🌍 **Multi-Currency**: Real-time conversion across 6 currencies
-- 🔐 **Security First**: SPF/DKIM/DMARC verification, SHA-256 deduplication
-- 📊 **Smart Analytics**: Price spike alerts, subscription tracking
-- 🎨 **Dark Optical Glass UI**: Modern, accessible design with ice-cyan accents
-- 📱 **Responsive Design**: Works seamlessly on desktop and mobile
-- 🌐 **Multi-Language**: Full EN/ID localization (100% dictionary coverage)
-- 📈 **Export Anywhere**: PDF summaries, CSV spreadsheets, JSON audit files
+- Dual AI and regex parsing with Gemini API and offline fallback
+- 18+ banking feeds including BCA, Mandiri, BNI, BRI, BSI, BTN, Jenius, CIMB, Jago, GoPay, OVO, ShopeePay, DANA, LinkAja, GrabPay, Stripe, PayPal, Wise
+- Real-time currency conversion across 6 currencies
+- SPF/DKIM/DMARC verification and SHA-256 deduplication
+- Price spike alerts and subscription tracking
+- Dark optical glass UI with ice-cyan accents
+- Responsive design for desktop and mobile
+- English and Bahasa Indonesia localization
+- Export to PDF, CSV, and JSON formats
 
 ---
 
@@ -76,7 +76,7 @@ The app uses Google Gemini AI (`@google/genai`) alongside offline regex parsers 
 
 ## Quick Start
 
-For the fastest setup, run:
+To set up the project, run:
 
 ```bash
 # 1. Clone the repository
@@ -94,20 +94,20 @@ cp .env.example .env
 npm run dev
 ```
 
-Then open `http://localhost:3000` in your browser and connect your Google Gemini API key.
+Open `http://localhost:3000` in your browser and connect your Google Gemini API key.
 
 ---
 
 ## Browser Support
 
-ExpensiveMail is optimized for modern browsers:
+ExpensiveMail runs on modern browsers:
 
 | Browser | Minimum Version | Status |
 | :------ | :-------------- | :----- |
-| Chrome  | 90+             | ✅ Supported |
-| Firefox | 88+             | ✅ Supported |
-| Safari  | 14+             | ✅ Supported |
-| Edge    | 90+             | ✅ Supported |
+| Chrome  | 90+             | Supported |
+| Firefox | 88+             | Supported |
+| Safari  | 14+             | Supported |
+| Edge    | 90+             | Supported |
 
 ---
 
@@ -131,50 +131,50 @@ ExpensiveMail is optimized for modern browsers:
 
 ### 4. Data Export
 
-- **Multiple Formats**: Export ledger data to PDF executive summaries, CSV spreadsheets, or JSON audit files.
+- **Multiple Formats**: Export ledger data to PDF summaries, CSV spreadsheets, or JSON audit files.
 - **Quick Access**: Open export options from the statement modal or the main navigation bar.
 
 ---
 
 ## Localization
 
-ExpensiveMail supports **English (`en`)** and **Bahasa Indonesia (`id`)**.
+ExpensiveMail supports English (`en`) and Bahasa Indonesia (`id`).
 
 | Component | English (`en`) | Bahasa Indonesia (`id`) | Coverage |
 | :-------- | :------------- | :---------------------- | :------- |
-| **Dashboard** | Full English labels | Label Bahasa Indonesia | 100% UI strings |
-| **Modals** | 13 localized dialogs | 13 dialog tersaji lengkap | 100% Modals |
-| **Toasts** | Real-time system feedback | Notifikasi sistem | All alert toasts |
-| **Exports** | PDF, CSV, and JSON exports | Ekspor PDF, CSV, dan JSON | All reports |
+| Dashboard | Full English labels | Label Bahasa Indonesia | 100% UI strings |
+| Modals | 13 localized dialogs | 13 dialog tersaji lengkap | 100% Modals |
+| Toasts | Real-time system feedback | Notifikasi sistem | All alert toasts |
+| Exports | PDF, CSV, and JSON exports | Ekspor PDF, CSV, dan JSON | All reports |
 
-Switch languages at any time from the navigation bar or language modal. The setting saves automatically.
+Languages can be switched at any time from the navigation bar or language modal. The setting is saved automatically.
 
 ---
 
 ## Multi-Currency Support
 
-The app handles real-time conversion and reporting across **6 currencies**:
+The app handles real-time conversion and reporting across 6 currencies:
 
 | Currency | Code | Symbol | Format |
 | :------- | :--- | :----: | :----- |
-| **Indonesian Rupiah** | `IDR` | `Rp` | Integer (`Rp 150.000`) |
-| **US Dollar** | `USD` | `$` | Two decimals (`$124.50`) |
-| **Euro** | `EUR` | `€` | Standard notation (`€95.00`) |
-| **British Pound** | `GBP` | `£` | Standard notation (`£82.00`) |
-| **Singapore Dollar** | `SGD` | `S$` | Standard notation (`S$140.00`) |
-| **Japanese Yen** | `JPY` | `¥` | Integer (`¥15,000`) |
+| Indonesian Rupiah | `IDR` | `Rp` | Integer (`Rp 150.000`) |
+| US Dollar | `USD` | `$` | Two decimals (`$124.50`) |
+| Euro | `EUR` | `€` | Standard notation (`€95.00`) |
+| British Pound | `GBP` | `£` | Standard notation (`£82.00`) |
+| Singapore Dollar | `SGD` | `S$` | Standard notation (`S$140.00`) |
+| Japanese Yen | `JPY` | `¥` | Integer (`¥15,000`) |
 
-Changing display currency recalculates monthly totals, daily averages, and budget limits immediately without reloading the page.
+Changing the display currency recalculates monthly totals, daily averages, and budget limits without reloading the page.
 
 ---
 
 ## Security & Privacy
 
-- ✅ **Firebase Firestore Encryption**: Encryption at rest for all stored data
-- ✅ **Email Sender Verification**: SPF/DKIM/DMARC validation against official merchant domains
-- ✅ **Automatic Duplicate Detection**: SHA-256 hashing prevents data duplication
-- ✅ **No Ad Tracking**: No third-party ad networks or telemetry
-- ✅ **Open Source**: Full transparency with MIT License
+- Firebase Firestore encryption at rest for all stored data
+- Email sender verification via SPF/DKIM/DMARC validation against official merchant domains
+- Automatic duplicate detection using SHA-256 hashing
+- No third-party ad networks or telemetry
+- Open source codebase with MIT License
 
 ---
 
@@ -201,14 +201,14 @@ Changing display currency recalculates monthly totals, daily averages, and budge
 
 | Layer | Technology | Role |
 | :---- | :---------- | :--- |
-| **Frontend** | React 19, TypeScript 5.8, Tailwind CSS v4 | Responsive web interface |
-| **Localization** | Custom i18n service | Dual language dictionary (EN and ID) |
-| **Currency** | `exchangeRateDb` service | Exchange rate conversion matrix |
-| **Animations** | Motion (`motion/react`) | Number counters and modal transitions |
-| **Backend** | Node.js, Express, Esbuild | Server API router (`dist/server.cjs`) |
-| **AI Model** | `@google/genai` | Email receipt parsing with regex fallback |
-| **Storage & Auth** | Firebase Auth & Firestore | User authentication and data persistence |
-| **Testing** | Playwright Chromium | End-to-end testing and visual verification |
+| Frontend | React 19, TypeScript 5.8, Tailwind CSS v4 | Responsive web interface |
+| Localization | Custom i18n service | Dual language dictionary (EN and ID) |
+| Currency | `exchangeRateDb` service | Exchange rate conversion matrix |
+| Animations | Motion (`motion/react`) | Number counters and modal transitions |
+| Backend | Node.js, Express, Esbuild | Server API router (`dist/server.cjs`) |
+| AI Model | `@google/genai` | Email receipt parsing with regex fallback |
+| Storage & Auth | Firebase Auth & Firestore | User authentication and data persistence |
+| Testing | Playwright Chromium | End-to-end testing and visual verification |
 
 ---
 
@@ -216,10 +216,10 @@ Changing display currency recalculates monthly totals, daily averages, and budge
 
 ### Prerequisites
 
-- **Node.js**: v18.0.0 or higher
-- **npm**: v9.0.0 or higher
-- **Google Gemini API Key**: [Get one here](https://cloud.google.com/docs/authentication/api-keys)
-- **Firebase Project**: [Create one here](https://firebase.google.com/)
+- Node.js v18.0.0 or higher
+- npm v9.0.0 or higher
+- Google Gemini API Key ([available here](https://cloud.google.com/docs/authentication/api-keys))
+- Firebase Project ([create one here](https://firebase.google.com/))
 
 ### Installation
 
@@ -234,7 +234,7 @@ npm install
 
 ### Environment Variables
 
-Create a `.env` file in the root directory with the following variables:
+Create a `.env` file in the root directory:
 
 ```env
 # Gemini AI API Key (required for AI-powered email parsing)
@@ -252,10 +252,10 @@ VITE_FIREBASE_APP_ID="your_app_id"
 APP_URL="http://localhost:3000"
 ```
 
-**How to get these credentials:**
+To obtain these credentials:
 
-1. **Gemini API Key**: Visit [Google AI Studio](https://makersuite.google.com/app/apikey) and create an API key
-2. **Firebase Credentials**: Go to [Firebase Console](https://console.firebase.google.com/), create a project, then copy credentials from Project Settings
+1. **Gemini API Key**: Visit [Google AI Studio](https://makersuite.google.com/app/apikey) and create an API key.
+2. **Firebase Credentials**: Go to [Firebase Console](https://console.firebase.google.com/), create a project, then copy the credentials from Project Settings.
 
 ---
 
@@ -281,12 +281,12 @@ npm start
 
 ### Workflow: Processing Email Receipts
 
-1. **Forward Receipt Email**: Send a transaction receipt email to the application
-2. **Sender Verification**: The system verifies sender authenticity via SPF/DKIM/DMARC
-3. **Parse Receipt**: Gemini AI or offline regex parser extracts transaction details
-4. **View in Dashboard**: Automatically categorized expense appears in **Expense List**
-5. **Review Analytics**: Check for anomalies or subscription patterns in **MetricCards**
-6. **Export Report**: Generate PDF, CSV, or JSON exports via the **Report Statement** modal
+1. Forward a transaction receipt email to the application.
+2. The system verifies sender authenticity via SPF/DKIM/DMARC.
+3. Gemini AI or the offline regex parser extracts transaction details.
+4. The expense appears in the dashboard and is automatically categorized.
+5. Check for anomalies or subscription patterns in the analytics view.
+6. Export the report as PDF, CSV, or JSON.
 
 ---
 
@@ -309,14 +309,14 @@ Measured from production builds (`vite build`), TypeScript checks (`tsc --noEmit
 
 | Metric | Value | Baseline / Context |
 | :----- | :----- | :------------------ |
-| **Main JS Bundle Size** | 308.42 kB | Down from 538.82 kB (42.7% reduction via code-splitting) |
-| **Modal Async Chunks** | 15 lazy modules | Modules load on demand (3.88 kB to 25.77 kB per modal) |
-| **Build Execution Time** | 5.39 seconds | 2,394 modules transformed, 0 TypeScript errors |
-| **Parsing Speed** | < 350 ms per email | 98% extraction confidence score |
-| **Bank Feeds Supported** | 18+ institutions | Templates for BCA, Mandiri, BNI, BRI, BSI, BTN, Jenius, CIMB, Jago, GoPay, OVO, ShopeePay, DANA, LinkAja, GrabPay, Stripe, PayPal, Wise |
-| **Languages** | 2 locales (EN, ID) | 100% dictionary string coverage |
-| **Currencies** | 6 ISO currencies | Real-time conversion across IDR, USD, EUR, GBP, SGD, JPY |
-| **E2E Test Pass Rate** | 100% pass | 0 console errors or uncaught exceptions |
+| Main JS Bundle Size | 308.42 kB | Down from 538.82 kB (42.7% reduction via code-splitting) |
+| Modal Async Chunks | 15 lazy modules | Modules load on demand (3.88 kB to 25.77 kB per modal) |
+| Build Execution Time | 5.39 seconds | 2,394 modules transformed, 0 TypeScript errors |
+| Parsing Speed | < 350 ms per email | 98% extraction confidence score |
+| Bank Feeds Supported | 18+ institutions | Templates for BCA, Mandiri, BNI, BRI, BSI, BTN, Jenius, CIMB, Jago, GoPay, OVO, ShopeePay, DANA, LinkAja, GrabPay, Stripe, PayPal, Wise |
+| Languages | 2 locales (EN, ID) | 100% dictionary string coverage |
+| Currencies | 6 ISO currencies | Real-time conversion across IDR, USD, EUR, GBP, SGD, JPY |
+| E2E Test Pass Rate | 100% pass | 0 console errors or uncaught exceptions |
 
 ---
 
@@ -381,11 +381,11 @@ node scratch/capture_readme_screenshots.mjs
 
 ## Known Limitations
 
-- ⚠️ **Manual Firebase Setup**: Requires manual configuration of Firebase credentials
-- ⚠️ **Gemini API Costs**: API usage may incur costs (see [Google Cloud Pricing](https://cloud.google.com/generative-ai/pricing))
-- ⚠️ **Limited Languages**: Currently supports English and Bahasa Indonesia only
-- ⚠️ **Email-Based Only**: Does not integrate with bank APIs directly; relies on email forwarding
-- ⚠️ **Rate Limits**: Subject to Google Gemini API rate limits (fallback regex parser handles offline scenarios)
+- Manual Firebase setup required for credential configuration
+- Google Gemini API usage may incur costs (see [Google Cloud Pricing](https://cloud.google.com/generative-ai/pricing))
+- English and Bahasa Indonesia only
+- Email-based parsing only; no direct bank API integration
+- Subject to Google Gemini API rate limits (offline regex parser handles offline scenarios)
 
 ---
 
@@ -393,15 +393,15 @@ node scratch/capture_readme_screenshots.mjs
 
 ### Version 1.2.0
 
-- **Dark Theme UI Refresh**: Updated the dark interface with a 5-layer optical glass styling, subtle noise grain overlay to reduce gradient banding on high-DPI screens, and ice-cyan focus rings
-- **Simplified Data Export**: Added a single export menu supporting PDF summaries, CSV spreadsheets, and JSON audit files inside the report modal and navigation bar
-- **Performance Optimizations**: Added eager image loading (`fetchPriority="high"`, `decoding="async"`), hoisted static category constants, wrapped event handlers in `useCallback`, and split modal async chunks for lazy loading
+- Dark theme UI refresh with 5-layer optical glass styling, subtle noise grain overlay to reduce gradient banding, and ice-cyan focus rings
+- Simplified data export with a single menu supporting PDF summaries, CSV spreadsheets, and JSON audit files
+- Performance optimizations including eager image loading, hoisted static category constants, wrapped event handlers in `useCallback`, and split modal async chunks
 
 ---
 
 ## Contributing
 
-Pull requests are welcome! To contribute:
+Pull requests are welcome. To contribute:
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
@@ -413,7 +413,7 @@ Pull requests are welcome! To contribute:
 4. Commit with clear messages: `git commit -m "Add feature description"`
 5. Push and open a Pull Request
 
-Please ensure:
+Ensure the following before submitting:
 - TypeScript type checks pass (`npm run typecheck`)
 - Production build succeeds (`npm run build`)
 - Code follows the existing style (Prettier is configured)
@@ -423,7 +423,3 @@ Please ensure:
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
----
-
-**Made with ❤️ for financial transparency**
