@@ -2,7 +2,7 @@
 
 # ExpensiveMail
 
-Automatic email receipt parser and expense ledger.
+Modern Al-powered email receipt parser and expense ledger.
 
 [![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](#version-history)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license)
