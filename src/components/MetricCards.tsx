@@ -258,12 +258,15 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
                 <Gauge className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-bold font-editorial text-white tracking-tight mb-1 tabular-nums font-mono text-readability-shadow">
+            <div className="text-xl sm:text-2xl font-bold font-editorial text-white tracking-tight mb-1 tabular-nums font-mono text-readability-shadow flex items-baseline space-x-1.5">
               <AnimatedNumber
                 value={dailyAverage}
                 format={(v) => formatCurrency(v, currency)}
                 className="tabular-nums font-mono"
               />
+              <span className="text-xs sm:text-sm font-semibold text-[#6FE0FF] font-mono">
+                {t.metrics.perDay}
+              </span>
             </div>
           </div>
           <div className="text-xs flex items-center justify-between pt-2 border-t border-white/10">
@@ -271,7 +274,7 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
               {t.metrics.billingCycle}
             </span>
             <span className="font-mono font-bold text-white tabular-nums">
-              {currentDay}/{daysInMonth} {t.metrics.perDay}
+              {currentDay}/{daysInMonth} {t.metrics.perDay.replace('/ ', '')}
             </span>
           </div>
         </div>

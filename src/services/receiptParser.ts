@@ -324,7 +324,12 @@ export function parseEmailReceiptClient(
   // Tier 1: SENDER PROVENANCE HARD GATE
   // Verify sender domain against the verified merchant / bank allowlist.
   // Unverified or spoofed sender domains are rejected immediately.
-  const provenance = verifySenderProvenance(from, userTrustedRules);
+  const provenance = verifySenderProvenance(
+    from,
+    userTrustedRules,
+    [],
+    knownAccounts
+  );
   if (!provenance.isVerified) {
     return null;
   }
@@ -897,7 +902,9 @@ export function parseEmailReceiptClient(
   // Tier 4: Merchant-Domain Consistency Cross-Check
   const crossCheck = crossCheckMerchantWithDomain(
     merchant,
-    provenance.senderDomain
+    provenance.senderDomain,
+    userTrustedRules,
+    knownAccounts
   );
   if (!crossCheck.isConsistent) {
     return null;

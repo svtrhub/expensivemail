@@ -53,6 +53,8 @@ export interface Translations {
     linkBank: string;
     unlink: string;
     filtered: string;
+    noAccountsConnected: string;
+    noAccountsDesc: string;
   };
   feed: {
     title: string;
@@ -221,7 +223,7 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       notConnected: 'Demo / Unlinked',
     },
     metrics: {
-      totalSpending: 'Total Spending',
+      totalSpending: "This Month's Spending",
       activeInboxSync: 'Active Inbox Sync',
       totalCaptured: 'Total Expenses Tracked',
       monthlySubscriptions: 'Monthly Subscriptions',
@@ -247,6 +249,9 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       linkBank: 'Link New Bank Feed',
       unlink: 'Remove',
       filtered: 'Filtered',
+      noAccountsConnected: 'No accounts connected',
+      noAccountsDesc:
+        'Link your Indonesian mobile bank or digital wallet to track balances and auto-reconcile transactions.',
     },
     feed: {
       title: 'Real-Time Transaction Stream',
@@ -430,7 +435,7 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       notConnected: 'Mode Demo / Belum Terhubung',
     },
     metrics: {
-      totalSpending: 'Total Pengeluaran',
+      totalSpending: 'Pengeluaran Bulan Ini',
       activeInboxSync: 'Sinkronisasi Email Aktif',
       totalCaptured: 'Total Transaksi Tercatat',
       monthlySubscriptions: 'Langganan Bulanan',
@@ -456,6 +461,9 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       linkBank: 'Hubungkan Bank Baru',
       unlink: 'Hapus',
       filtered: 'Terfilter',
+      noAccountsConnected: 'Belum ada akun bank terhubung',
+      noAccountsDesc:
+        'Hubungkan rekening mobile banking atau dompet digital Anda untuk memantau saldo dan rekonsiliasi transaksi otomatis.',
     },
     feed: {
       title: 'Arus Transaksi Real-Time',

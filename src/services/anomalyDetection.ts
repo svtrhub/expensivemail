@@ -227,7 +227,7 @@ export function detectAnomalies(
   const moderateCount = activeAnomalies.filter(
     (a) => a.severity === 'moderate'
   ).length;
-  const highestRec = anomalies.length > 0 ? anomalies[0] : null;
+  const highestRec = activeAnomalies.length > 0 ? activeAnomalies[0] : null;
 
   return {
     anomalies,

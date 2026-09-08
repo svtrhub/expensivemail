@@ -304,25 +304,26 @@ export const IngestionRulesModal: React.FC<IngestionRulesModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
                       {language === 'id' ? 'Target Bidang' : 'Match Field'}
                     </label>
                     <select
                       value={newMatchField}
                       onChange={(e) => setNewMatchField(e.target.value as any)}
-                      className="w-full px-3 py-1.5 bg-white dark:bg-[#0D2238] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs text-[#051C2C] dark:text-white"
+                      style={{
+                        colorScheme: 'dark',
+                        backgroundColor: '#071524',
+                      }}
+                      className="w-full px-3 py-1.5 bg-[#071524] border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#38BDF8] [&>option]:bg-[#071524] [&>option]:text-white"
                     >
-                      <option
-                        value="any"
-                        className="dark:bg-[#0D2238] dark:text-white"
-                      >
+                      <option value="any" className="bg-[#071524] text-white">
                         {language === 'id'
                           ? 'Semua (Merchant, Subjek, Sender)'
                           : 'Any (Merchant, Subject, Sender)'}
                       </option>
                       <option
                         value="merchant"
-                        className="dark:bg-[#0D2238] dark:text-white"
+                        className="bg-[#071524] text-white"
                       >
                         {language === 'id'
                           ? 'Nama Merchant Saja'
@@ -330,7 +331,7 @@ export const IngestionRulesModal: React.FC<IngestionRulesModalProps> = ({
                       </option>
                       <option
                         value="sender"
-                        className="dark:bg-[#0D2238] dark:text-white"
+                        className="bg-[#071524] text-white"
                       >
                         {language === 'id'
                           ? 'Alamat Email Pengirim'
@@ -338,7 +339,7 @@ export const IngestionRulesModal: React.FC<IngestionRulesModalProps> = ({
                       </option>
                       <option
                         value="subject"
-                        className="dark:bg-[#0D2238] dark:text-white"
+                        className="bg-[#071524] text-white"
                       >
                         {language === 'id' ? 'Subjek Email' : 'Email Subject'}
                       </option>
@@ -346,7 +347,7 @@ export const IngestionRulesModal: React.FC<IngestionRulesModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
                       {language === 'id'
                         ? 'Kategori yang Diterapkan'
                         : 'Assigned Category'}
@@ -356,13 +357,17 @@ export const IngestionRulesModal: React.FC<IngestionRulesModalProps> = ({
                       onChange={(e) =>
                         setNewCategory(e.target.value as ExpenseCategory)
                       }
-                      className="w-full px-3 py-1.5 bg-white dark:bg-[#0D2238] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs text-[#051C2C] dark:text-white"
+                      style={{
+                        colorScheme: 'dark',
+                        backgroundColor: '#071524',
+                      }}
+                      className="w-full px-3 py-1.5 bg-[#071524] border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#38BDF8] [&>option]:bg-[#071524] [&>option]:text-white"
                     >
                       {CATEGORIES.map((cat) => (
                         <option
                           key={cat}
                           value={cat}
-                          className="dark:bg-[#0D2238] dark:text-white"
+                          className="bg-[#071524] text-white"
                         >
                           {t.categories[cat] || cat}
                         </option>

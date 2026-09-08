@@ -1,11 +1,12 @@
 {
-  "projectId": "gen-lang-client-0385667441",
-  "appId": "1:1083347088526:web:e22c5afae683939cf305df",
-  "apiKey": "AIzaSyDlCw0G4UrL50VrUlX-O-hF4Slq9psb7VI",
-  "authDomain": "gen-lang-client-0385667441.firebaseapp.com",
-  "storageBucket": "gen-lang-client-0385667441.firebasestorage.app",
-  "messagingSenderId": "1083347088526",
+  "projectId": "expensivemail-391e7",
+  "appId": "1:866055821668:web:d0ca296de9b69e6b474271",
+  "apiKey": "AIzaSyBfxoraf4sZI4O9hfRZRjjtVmCcHC__9fI",
+  "authDomain": "expensivemail-391e7.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-expensivemail-2a69e7e5-d5dc-438b-bd37-6bdacc2cb02d",
+  "storageBucket": "expensivemail-391e7.firebasestorage.app",
+  "messagingSenderId": "866055821668",
   "measurementId": "",
-  "oAuthClientId": "1083347088526-gmla73lqm6o8365386avsa7r1su771js.apps.googleusercontent.com",
+  "oAuthClientId": "866055821668-3qdf6bnl69ulr94tq08evncohpc01hbq.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

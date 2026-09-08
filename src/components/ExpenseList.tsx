@@ -63,6 +63,7 @@ interface ExpenseListProps {
   expenses: Expense[];
   accounts: BankAccount[];
   selectedAccountId: string | null;
+  onSelectAccount?: (id: string | null) => void;
   anomaliesMap?: Map<string, AnomalyRecord>;
   onViewEmailDetail: (expense: Expense) => void;
   onEditExpense: (expense: Expense) => void;
@@ -85,6 +86,8 @@ interface ExpenseListProps {
   language?: LanguageCode;
   t: Translations;
   initialFilterAnomaliesOnly?: boolean;
+  categoryFilter?: string | null;
+  onCategoryFilterChange?: (cat: string) => void;
   hasMoreExpenses?: boolean;
   isLoadingMore?: boolean;
   onLoadMoreExpenses?: () => void;
@@ -94,6 +97,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
   expenses,
   accounts,
   selectedAccountId,
+  onSelectAccount,
   anomaliesMap = new Map(),
   onViewEmailDetail,
   onEditExpense,
@@ -113,12 +117,16 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
   language = 'id',
   t,
   initialFilterAnomaliesOnly = false,
+  categoryFilter,
+  onCategoryFilterChange,
   hasMoreExpenses = false,
   isLoadingMore = false,
   onLoadMoreExpenses,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    categoryFilter || 'ALL'
+  );
   const [dateFilter, setDateFilter] = useState<
     'ALL' | 'TODAY' | '7DAYS' | 'THIS_MONTH'
   >('ALL');
@@ -139,6 +147,12 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
       setShowAnomaliesOnly(true);
     }
   }, [initialFilterAnomaliesOnly]);
+
+  useEffect(() => {
+    if (categoryFilter !== undefined && categoryFilter !== null) {
+      setSelectedCategory(categoryFilter);
+    }
+  }, [categoryFilter]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -202,8 +216,34 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
         }
 
         // Account filter
-        if (selectedAccountId && expense.bankAccountId !== selectedAccountId) {
-          return false;
+        if (selectedAccountId) {
+          const selectedAcc = accounts.find((a) => a.id === selectedAccountId);
+          const matchesDirectId = expense.bankAccountId === selectedAccountId;
+
+          let matchesFallback = false;
+          if (!expense.bankAccountId && selectedAcc) {
+            const inst = (selectedAcc.institution || '').toLowerCase();
+            const accName = (selectedAcc.name || '').toLowerCase();
+            const bName = (expense.bankAccountName || '').toLowerCase();
+            const pMethod = (expense.paymentMethod || '').toLowerCase();
+            const mask = selectedAcc.accountNumberMask?.replace(/[^0-9]/g, '');
+
+            matchesFallback = Boolean(
+              (inst &&
+                (bName.includes(inst) ||
+                  inst.includes(bName) ||
+                  pMethod.includes(inst))) ||
+              (accName &&
+                (bName.includes(accName) || pMethod.includes(accName))) ||
+              (mask &&
+                mask.length === 4 &&
+                (pMethod.includes(mask) || bName.includes(mask)))
+            );
+          }
+
+          if (!matchesDirectId && !matchesFallback) {
+            return false;
+          }
         }
 
         // Category filter
@@ -513,18 +553,21 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
             <select
               id="category-filter-select"
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              style={{ colorScheme: 'dark' }}
-              className="w-full px-2.5 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-xs text-white focus:outline-none focus:border-[#2251FF] cursor-pointer"
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                onCategoryFilterChange?.(e.target.value);
+              }}
+              style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+              className="w-full px-2.5 py-1.5 bg-[#071524] border border-white/20 rounded-xl text-xs text-white focus:outline-none focus:border-[#38BDF8] cursor-pointer [&>option]:bg-[#071524] [&>option]:text-white"
             >
-              <option value="ALL" className="bg-[#051C2C] text-white">
+              <option value="ALL" className="bg-[#071524] text-white">
                 {t.feed.allCategories}
               </option>
               {EXPENSE_CATEGORIES.map((cat) => (
                 <option
                   key={cat}
                   value={cat}
-                  className="bg-[#051C2C] text-white"
+                  className="bg-[#071524] text-white"
                 >
                   {t.categories[cat] || cat}
                 </option>
@@ -538,19 +581,19 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
               id="date-filter-select"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value as any)}
-              style={{ colorScheme: 'dark' }}
-              className="w-full px-2.5 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-xs text-white focus:outline-none focus:border-[#2251FF] cursor-pointer"
+              style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+              className="w-full px-2.5 py-1.5 bg-[#071524] border border-white/20 rounded-xl text-xs text-white focus:outline-none focus:border-[#38BDF8] cursor-pointer [&>option]:bg-[#071524] [&>option]:text-white"
             >
-              <option value="ALL" className="bg-[#051C2C] text-white">
+              <option value="ALL" className="bg-[#071524] text-white">
                 {language === 'id' ? 'Semua Tanggal' : 'All Dates'}
               </option>
-              <option value="TODAY" className="bg-[#051C2C] text-white">
+              <option value="TODAY" className="bg-[#071524] text-white">
                 {language === 'id' ? 'Hari Ini' : 'Today'}
               </option>
-              <option value="7DAYS" className="bg-[#051C2C] text-white">
+              <option value="7DAYS" className="bg-[#071524] text-white">
                 {language === 'id' ? '7 Hari Terakhir' : 'Last 7 Days'}
               </option>
-              <option value="THIS_MONTH" className="bg-[#051C2C] text-white">
+              <option value="THIS_MONTH" className="bg-[#071524] text-white">
                 {language === 'id' ? 'Bulan Ini' : 'This Month'}
               </option>
             </select>
@@ -562,30 +605,30 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
               id="sort-by-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              style={{ colorScheme: 'dark' }}
-              className="w-full px-2.5 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-xs text-white focus:outline-none focus:border-[#2251FF] cursor-pointer"
+              style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+              className="w-full px-2.5 py-1.5 bg-[#071524] border border-white/20 rounded-xl text-xs text-white focus:outline-none focus:border-[#38BDF8] cursor-pointer [&>option]:bg-[#071524] [&>option]:text-white"
             >
-              <option value="DATE_DESC" className="bg-[#051C2C] text-white">
+              <option value="DATE_DESC" className="bg-[#071524] text-white">
                 {language === 'id'
                   ? 'Tanggal: Terbaru Dulu'
                   : 'Date: Newest First'}
               </option>
-              <option value="DATE_ASC" className="bg-[#051C2C] text-white">
+              <option value="DATE_ASC" className="bg-[#071524] text-white">
                 {language === 'id'
                   ? 'Tanggal: Terlama Dulu'
                   : 'Date: Oldest First'}
               </option>
-              <option value="AMOUNT_DESC" className="bg-[#051C2C] text-white">
+              <option value="AMOUNT_DESC" className="bg-[#071524] text-white">
                 {language === 'id'
                   ? 'Nominal: Terbesar'
                   : 'Amount: Highest First'}
               </option>
-              <option value="AMOUNT_ASC" className="bg-[#051C2C] text-white">
+              <option value="AMOUNT_ASC" className="bg-[#071524] text-white">
                 {language === 'id'
                   ? 'Nominal: Terkecil'
                   : 'Amount: Lowest First'}
               </option>
-              <option value="CONFIDENCE" className="bg-[#051C2C] text-white">
+              <option value="CONFIDENCE" className="bg-[#071524] text-white">
                 {language === 'id'
                   ? 'Tingkat Akurasi AI'
                   : 'AI Match Confidence'}
@@ -593,6 +636,37 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
             </select>
           </div>
         </div>
+
+        {/* Active Account Filter Banner */}
+        {selectedAccountId && (
+          <div className="mb-3 px-3 py-2 bg-[#2251FF]/15 border border-[#2251FF]/40 rounded-xl flex items-center justify-between text-xs text-slate-200 animate-in fade-in-50">
+            <div className="flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-[#38BDF8] animate-pulse"></span>
+              <span>
+                {language === 'id'
+                  ? 'Memfilter transaksi untuk rekening:'
+                  : 'Filtering transactions for account:'}{' '}
+                <strong className="text-white font-semibold">
+                  {accounts.find((a) => a.id === selectedAccountId)?.name ||
+                    accounts.find((a) => a.id === selectedAccountId)
+                      ?.institution ||
+                    'Selected Account'}
+                </strong>
+              </span>
+            </div>
+            {onSelectAccount && (
+              <button
+                type="button"
+                onClick={() => onSelectAccount(null)}
+                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer text-[11px] font-medium"
+              >
+                {language === 'id'
+                  ? 'Tampilkan Semua Rekening'
+                  : 'Show All Accounts'}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Batch Action Toolbar when Items Selected */}
         {selectedExpenseIds.length > 0 && (
@@ -615,13 +689,14 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                   onChange={(e) =>
                     setBatchCategory(e.target.value as ExpenseCategory)
                   }
-                  className="bg-[#0D2E78] dark:bg-[#112842] border border-[#2251FF]/40 text-white text-xs rounded-lg px-2 py-1 focus:outline-none"
+                  style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+                  className="bg-[#071524] border border-[#2251FF]/40 text-white text-xs rounded-lg px-2 py-1 focus:outline-none [&>option]:bg-[#071524] [&>option]:text-white"
                 >
                   {EXPENSE_CATEGORIES.map((c) => (
                     <option
                       key={c}
                       value={c}
-                      className="bg-white text-slate-900"
+                      className="bg-[#071524] text-white"
                     >
                       {t.categories[c] || c}
                     </option>

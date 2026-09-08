@@ -234,7 +234,13 @@ export const MERCHANT_DOMAIN_ALLOWLIST: VerifiedMerchantRule[] = [
     merchantKey: 'bca',
     displayName: 'Bank Central Asia (BCA)',
     category: 'Financial & Fees',
-    allowedDomains: ['bca.co.id', 'klikbca.com'],
+    allowedDomains: [
+      'bca.co.id',
+      'klikbca.com',
+      'notifikasi.bca.co.id',
+      'mybca.bca.co.id',
+      'bcadigital.co.id',
+    ],
     merchantAliases: [
       'bca',
       'bank central asia',
@@ -243,13 +249,19 @@ export const MERCHANT_DOMAIN_ALLOWLIST: VerifiedMerchantRule[] = [
       'halo bca',
       'bca notifikasi',
       'bca mobile',
+      'blu by bca digital',
+      'blu',
     ],
   },
   {
     merchantKey: 'mandiri',
     displayName: 'Bank Mandiri',
     category: 'Financial & Fees',
-    allowedDomains: ['bankmandiri.co.id', 'mandiri.co.id'],
+    allowedDomains: [
+      'bankmandiri.co.id',
+      'mandiri.co.id',
+      'livin.mandiri.co.id',
+    ],
     merchantAliases: [
       'mandiri',
       'bank mandiri',
@@ -257,13 +269,14 @@ export const MERCHANT_DOMAIN_ALLOWLIST: VerifiedMerchantRule[] = [
       'livin by mandiri',
       'mandiri care',
       'mandiri debit',
+      'livin',
     ],
   },
   {
     merchantKey: 'bni',
     displayName: 'Bank Negara Indonesia (BNI)',
     category: 'Financial & Fees',
-    allowedDomains: ['bni.co.id'],
+    allowedDomains: ['bni.co.id', 'wondr.bni.co.id'],
     merchantAliases: [
       'bni',
       'bank negara indonesia',
@@ -276,7 +289,7 @@ export const MERCHANT_DOMAIN_ALLOWLIST: VerifiedMerchantRule[] = [
     merchantKey: 'bri',
     displayName: 'Bank Rakyat Indonesia (BRI)',
     category: 'Financial & Fees',
-    allowedDomains: ['bri.co.id'],
+    allowedDomains: ['bri.co.id', 'kontakbri.co.id'],
     merchantAliases: [
       'bri',
       'bank rakyat indonesia',
@@ -356,14 +369,14 @@ export const MERCHANT_DOMAIN_ALLOWLIST: VerifiedMerchantRule[] = [
     merchantKey: 'jago',
     displayName: 'Bank Jago',
     category: 'Financial & Fees',
-    allowedDomains: ['jago.com'],
+    allowedDomains: ['jago.com', 'bankjago.com'],
     merchantAliases: ['jago', 'bank jago', 'pt bank jago tbk', 'kantong jago'],
   },
   {
     merchantKey: 'seabank',
     displayName: 'SeaBank Indonesia',
     category: 'Financial & Fees',
-    allowedDomains: ['seabank.co.id'],
+    allowedDomains: ['seabank.co.id', 'bankseabank.co.id'],
     merchantAliases: [
       'seabank',
       'seabank indonesia',
@@ -519,6 +532,200 @@ export const MERCHANT_DOMAIN_ALLOWLIST: VerifiedMerchantRule[] = [
     category: 'Utilities & Bills',
     allowedDomains: ['xl.co.id', 'xlaxiata.co.id', 'axis.co.id'],
     merchantAliases: ['xl', 'xl axiata', 'myxl', 'axis'],
+  },
+  {
+    merchantKey: 'steam',
+    displayName: 'Steam (Valve)',
+    category: 'Entertainment & Subscriptions',
+    allowedDomains: [
+      'steampowered.com',
+      'valvesoftware.com',
+      'steamcommunity.com',
+    ],
+    merchantAliases: ['steam', 'valve', 'steam purchase', 'steam order'],
+  },
+  {
+    merchantKey: 'traveloka',
+    displayName: 'Traveloka',
+    category: 'Travel & Transportation',
+    allowedDomains: ['traveloka.com'],
+    merchantAliases: ['traveloka', 'pt traveloka indonesia'],
+  },
+  {
+    merchantKey: 'tiket',
+    displayName: 'Tiket.com',
+    category: 'Travel & Transportation',
+    allowedDomains: ['tiket.com'],
+    merchantAliases: ['tiket.com', 'tiket'],
+  },
+  {
+    merchantKey: 'blibli',
+    displayName: 'Blibli',
+    category: 'Shopping & Retail',
+    allowedDomains: ['blibli.com'],
+    merchantAliases: ['blibli', 'pt global digital niaga'],
+  },
+  {
+    merchantKey: 'lazada',
+    displayName: 'Lazada Indonesia',
+    category: 'Shopping & Retail',
+    allowedDomains: ['lazada.co.id', 'lazada.com'],
+    merchantAliases: ['lazada', 'lazada indonesia'],
+  },
+  {
+    merchantKey: 'jenius',
+    displayName: 'Jenius (Bank BTPN)',
+    category: 'Financial & Fees',
+    allowedDomains: ['jenius.com', 'btpn.com', '247.jenius.com'],
+    merchantAliases: ['jenius', 'btpn', 'bank btpn', 'jenius btpn'],
+  },
+  {
+    merchantKey: 'flip',
+    displayName: 'Flip (PT Fliptech Lentera Inspirasi Pertiwi)',
+    category: 'Financial & Fees',
+    allowedDomains: ['flip.id'],
+    merchantAliases: [
+      'flip',
+      'flip.id',
+      'pt fliptech lentera inspirasi pertiwi',
+    ],
+  },
+  {
+    merchantKey: 'doku',
+    displayName: 'DOKU (PT Nusa Satu Inti Artha)',
+    category: 'Financial & Fees',
+    allowedDomains: ['doku.com'],
+    merchantAliases: ['doku', 'doku wallet'],
+  },
+  {
+    merchantKey: 'midtrans',
+    displayName: 'Midtrans (GoTo Financial)',
+    category: 'Financial & Fees',
+    allowedDomains: ['midtrans.com'],
+    merchantAliases: ['midtrans', 'midtrans payments'],
+  },
+  {
+    merchantKey: 'xendit',
+    displayName: 'Xendit',
+    category: 'Financial & Fees',
+    allowedDomains: ['xendit.co', 'xendit.com'],
+    merchantAliases: ['xendit', 'xendit payments'],
+  },
+  {
+    merchantKey: 'wise',
+    displayName: 'Wise (TransferWise)',
+    category: 'Financial & Fees',
+    allowedDomains: ['wise.com', 'transferwise.com'],
+    merchantAliases: ['wise', 'transferwise'],
+  },
+  {
+    merchantKey: 'indomaret',
+    displayName: 'Indomaret / KlikIndomaret',
+    category: 'Food & Dining',
+    allowedDomains: ['indomaret.co.id', 'klikindomaret.com'],
+    merchantAliases: ['indomaret', 'klikindomaret', 'pt indomarco prismatama'],
+  },
+  {
+    merchantKey: 'alfamart',
+    displayName: 'Alfamart / Alfagift',
+    category: 'Food & Dining',
+    allowedDomains: ['alfamart.co.id', 'alfagift.id'],
+    merchantAliases: ['alfamart', 'alfagift', 'pt sumber alfaria trijaya'],
+  },
+  {
+    merchantKey: 'superindo',
+    displayName: 'Super Indo',
+    category: 'Food & Dining',
+    allowedDomains: ['superindo.co.id'],
+    merchantAliases: ['superindo', 'super indo', 'lion super indo'],
+  },
+  {
+    merchantKey: 'agoda',
+    displayName: 'Agoda',
+    category: 'Travel & Transportation',
+    allowedDomains: ['agoda.com'],
+    merchantAliases: ['agoda', 'agoda company pte ltd'],
+  },
+  {
+    merchantKey: 'booking_com',
+    displayName: 'Booking.com',
+    category: 'Travel & Transportation',
+    allowedDomains: ['booking.com'],
+    merchantAliases: ['booking.com', 'booking'],
+  },
+  {
+    merchantKey: 'klook',
+    displayName: 'Klook',
+    category: 'Travel & Transportation',
+    allowedDomains: ['klook.com'],
+    merchantAliases: ['klook', 'klook travel'],
+  },
+  {
+    merchantKey: 'airbnb',
+    displayName: 'Airbnb',
+    category: 'Travel & Transportation',
+    allowedDomains: ['airbnb.com'],
+    merchantAliases: ['airbnb', 'airbnb payments'],
+  },
+  {
+    merchantKey: 'linkaja',
+    displayName: 'LinkAja',
+    category: 'Financial & Fees',
+    allowedDomains: ['linkaja.id', 'linkaja.com'],
+    merchantAliases: ['linkaja', 'pt fintek karya nusantara'],
+  },
+  {
+    merchantKey: 'paypal',
+    displayName: 'PayPal',
+    category: 'Financial & Fees',
+    allowedDomains: [
+      'paypal.com',
+      'paypal.co.id',
+      'mail.paypal.com',
+      'intl.paypal.com',
+    ],
+    merchantAliases: ['paypal', 'paypal pte. ltd.'],
+  },
+  {
+    merchantKey: 'stripe',
+    displayName: 'Stripe',
+    category: 'Financial & Fees',
+    allowedDomains: ['stripe.com'],
+    merchantAliases: ['stripe', 'stripe payments'],
+  },
+  {
+    merchantKey: 'general_saas',
+    displayName: 'SaaS / Software Services',
+    category: 'Utilities & Bills',
+    allowedDomains: [
+      'vercel.com',
+      'supabase.com',
+      'cloudflare.com',
+      'notion.so',
+      'figma.com',
+      'canva.com',
+      'adobe.com',
+      'zoom.us',
+      'midjourney.com',
+      'cursor.com',
+      'cursor.sh',
+      'digitalocean.com',
+      'heroku.com',
+    ],
+    merchantAliases: [
+      'vercel',
+      'supabase',
+      'cloudflare',
+      'notion',
+      'figma',
+      'canva',
+      'adobe',
+      'zoom',
+      'midjourney',
+      'cursor',
+      'digitalocean',
+      'heroku',
+    ],
   },
 ];
 
@@ -817,11 +1024,47 @@ export function verifyEmailAuthentication(
 
     // Case B: Visible domain claims an allowlisted bank/merchant (e.g. amazon.com, bca.co.id),
     // but the cryptographic DKIM/SPF domain belongs to an unrelated third party (e.g. badactor.org)
+    // NOTE: Legitimate Email Service Providers (ESPs) and transactional gateways are whitelisted to prevent false positives
+    const KNOWN_TRANSACTIONAL_GATEWAYS = [
+      'sendgrid.net',
+      'sendgrid.me',
+      'sendgrid.info',
+      'amazonses.com',
+      'mailgun.org',
+      'mailgun.net',
+      'postmarkapp.com',
+      'sparkpostmail.com',
+      'mcsv.net',
+      'mandrillapp.com',
+      'salesforce.com',
+      'exacttarget.com',
+      'oraclecloud.com',
+      'zendesk.com',
+      'freshdesk.com',
+      'bounces.google.com',
+      'google.com',
+      'googlemail.com',
+      'gmail.com',
+      'tokopedia.net',
+      'shopeemail.com',
+      'go-jek.com',
+      'grab.com',
+      'valvesoftware.com',
+      'steampowered.com',
+      'apple.com',
+      'microsoft.com',
+    ];
+
+    const isRecognizedGateway = KNOWN_TRANSACTIONAL_GATEWAYS.some((gw) =>
+      isDomainMatching(authenticatedDomain, gw)
+    );
+
     if (
       visibleDomain &&
       authenticatedDomain &&
       !isDomainMatching(authenticatedDomain, visibleDomain) &&
-      !isDomainMatching(visibleDomain, authenticatedDomain)
+      !isDomainMatching(visibleDomain, authenticatedDomain) &&
+      !isRecognizedGateway
     ) {
       isSpoofed = true;
       failureReason = `Domain Mismatch: Visible 'From:' claims '${visibleDomain}', but cryptographic DKIM/SPF authenticated origin is '${authenticatedDomain}'`;
@@ -909,7 +1152,8 @@ export function extractSenderDomain(
 export function verifySenderProvenance(
   fromOrEmail: any,
   userTrustedRules: UserTrustedDomainRule[] = [],
-  userUntrustedRules: UserUntrustedDomainRule[] = []
+  userUntrustedRules: UserUntrustedDomainRule[] = [],
+  knownBankAccounts: any[] = []
 ): {
   isVerified: boolean;
   isBlockedUntrusted?: boolean;
@@ -1045,6 +1289,52 @@ export function verifySenderProvenance(
     }
   }
 
+  // 5.5 Match against User's Connected Bank Accounts
+  if (Array.isArray(knownBankAccounts) && knownBankAccounts.length > 0) {
+    const cleanFrom = fromHeader.toLowerCase();
+    const cleanDomain = (effectiveDomain || domain).toLowerCase();
+    for (const acc of knownBankAccounts) {
+      const inst = (acc.institution || acc.name || '').toLowerCase().trim();
+      if (!inst) continue;
+      // If institution matches domain or sender display name
+      const isBankMatch =
+        cleanDomain.includes(inst) ||
+        cleanFrom.includes(inst) ||
+        (inst.includes('bca') &&
+          (cleanDomain.includes('bca') || cleanFrom.includes('bca'))) ||
+        (inst.includes('mandiri') &&
+          (cleanDomain.includes('mandiri') || cleanFrom.includes('mandiri'))) ||
+        (inst.includes('bni') &&
+          (cleanDomain.includes('bni') || cleanFrom.includes('bni'))) ||
+        (inst.includes('bri') &&
+          (cleanDomain.includes('bri') || cleanFrom.includes('bri'))) ||
+        (inst.includes('jago') &&
+          (cleanDomain.includes('jago') || cleanFrom.includes('jago'))) ||
+        (inst.includes('seabank') &&
+          (cleanDomain.includes('seabank') || cleanFrom.includes('seabank'))) ||
+        (inst.includes('permata') &&
+          (cleanDomain.includes('permata') || cleanFrom.includes('permata'))) ||
+        (inst.includes('cimb') &&
+          (cleanDomain.includes('cimb') || cleanFrom.includes('cimb')));
+
+      if (isBankMatch) {
+        return {
+          isVerified: true,
+          senderDomain: effectiveDomain || domain,
+          senderEmail: email,
+          matchedRule: {
+            merchantKey: `bank_${(acc.id || inst).replace(/\s+/g, '_')}`,
+            displayName: acc.name || acc.institution,
+            category: 'Financial & Fees',
+            allowedDomains: [cleanDomain],
+            merchantAliases: [inst],
+          },
+          authVerdict,
+        };
+      }
+    }
+  }
+
   return {
     isVerified: false,
     senderDomain: effectiveDomain,
@@ -1091,7 +1381,8 @@ export function isDomainUntrusted(
 export function crossCheckMerchantWithDomain(
   claimedMerchant: string,
   senderDomain: string,
-  userTrustedRules: UserTrustedDomainRule[] = []
+  userTrustedRules: UserTrustedDomainRule[] = [],
+  knownBankAccounts: any[] = []
 ): {
   isConsistent: boolean;
   matchedMerchant?: VerifiedMerchantRule | UserTrustedDomainRule;
@@ -1119,6 +1410,24 @@ export function crossCheckMerchantWithDomain(
       return {
         isConsistent: true,
         matchedMerchant: matchedUserRule,
+      };
+    }
+  }
+
+  // 1.5 Check connected user bank accounts
+  if (Array.isArray(knownBankAccounts) && knownBankAccounts.length > 0) {
+    const cleanDomain = senderDomain.toLowerCase();
+    const isMatchedConnectedBank = knownBankAccounts.some((acc) => {
+      const inst = (acc.institution || acc.name || '').toLowerCase().trim();
+      return (
+        inst && (cleanDomain.includes(inst) || cleanMerchant.includes(inst))
+      );
+    });
+    if (isMatchedConnectedBank) {
+      return {
+        isConsistent: true,
+        reason:
+          'Debit or transaction alert processed by connected user bank account',
       };
     }
   }

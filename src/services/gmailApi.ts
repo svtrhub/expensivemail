@@ -5,20 +5,26 @@ export interface FetchEmailResult {
   totalFound: number;
 }
 
-// Decode base64url encoded email body
+// Safely decode base64url encoded email body handling UTF-8 and binary quirks
 function decodeBase64Url(base64UrlStr: string): string {
+  if (!base64UrlStr) return '';
   try {
     let base64 = base64UrlStr.replace(/-/g, '+').replace(/_/g, '/');
     while (base64.length % 4) {
       base64 += '=';
     }
-    return decodeURIComponent(
-      Array.prototype.map
-        .call(atob(base64), (c: string) => {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        })
-        .join('')
-    );
+    const binary = atob(base64);
+    try {
+      return decodeURIComponent(
+        Array.prototype.map
+          .call(binary, (c: string) => {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          })
+          .join('')
+      );
+    } catch {
+      return binary;
+    }
   } catch (e) {
     try {
       return atob(base64UrlStr.replace(/-/g, '+').replace(/_/g, '/'));
@@ -28,77 +34,311 @@ function decodeBase64Url(base64UrlStr: string): string {
   }
 }
 
+// Deep recursive text extractor across multipart/mixed, multipart/alternative, etc.
 function extractBodyFromPayload(payload: any): string {
   if (!payload) return '';
 
-  if (payload.body?.data) {
-    return decodeBase64Url(payload.body.data);
-  }
+  let plainText = '';
+  let htmlText = '';
 
-  if (payload.parts && Array.isArray(payload.parts)) {
-    // Prefer text/plain first, then text/html
-    for (const part of payload.parts) {
-      if (part.mimeType === 'text/plain' && part.body?.data) {
-        return decodeBase64Url(part.body.data);
-      }
-    }
-    for (const part of payload.parts) {
-      if (part.mimeType === 'text/html' && part.body?.data) {
-        // Strip basic HTML tags for compact AI parsing
-        const html = decodeBase64Url(part.body.data);
-        return html
-          .replace(/<[^>]*>?/gm, ' ')
+  function walk(part: any) {
+    if (!part) return;
+
+    const mime = (part.mimeType || '').toLowerCase();
+
+    if (mime === 'text/plain' && part.body?.data) {
+      const decoded = decodeBase64Url(part.body.data);
+      if (decoded) plainText += '\n' + decoded;
+    } else if (mime === 'text/html' && part.body?.data) {
+      const decoded = decodeBase64Url(part.body.data);
+      if (decoded) {
+        // Strip HTML tags and normalize whitespace
+        const stripped = decoded
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/gi, ' ')
+          .replace(/&amp;/gi, '&')
+          .replace(/&lt;/gi, '<')
+          .replace(/&gt;/gi, '>')
+          .replace(/&quot;/gi, '"')
+          .replace(/&#39;/gi, "'")
           .replace(/\s+/g, ' ')
           .trim();
+        htmlText += '\n' + stripped;
       }
-      if (part.parts) {
-        const sub = extractBodyFromPayload(part);
-        if (sub) return sub;
+    }
+
+    if (Array.isArray(part.parts)) {
+      for (const subPart of part.parts) {
+        walk(subPart);
       }
     }
   }
 
-  return '';
+  // Check top-level body first
+  if (payload.body?.data) {
+    const topDecoded = decodeBase64Url(payload.body.data);
+    const mime = (payload.mimeType || '').toLowerCase();
+    if (mime.includes('html')) {
+      htmlText +=
+        '\n' +
+        topDecoded
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+    } else {
+      plainText += '\n' + topDecoded;
+    }
+  }
+
+  // Walk any child parts
+  if (Array.isArray(payload.parts)) {
+    for (const part of payload.parts) {
+      walk(part);
+    }
+  }
+
+  const result = (plainText.trim() || htmlText.trim()).trim();
+  return result;
+}
+
+export interface FetchExpenseEmailsOptions {
+  maxResults?: number;
+  customQuery?: string;
+  lastSyncTime?: Date | string | null;
+  syncExecutionTime?: Date;
+  paginateAll?: boolean;
+  maxPages?: number;
+  fetchFn?: typeof fetch;
+  knownProcessedEmailIds?: Set<string> | string[];
+}
+
+/**
+ * Format a Date object as YYYY/MM/DD for Gmail search query syntax.
+ */
+export function formatDateForGmailQuery(date: Date): string {
+  const d = new Date(date);
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${year}/${month}/${day}`;
+}
+
+/**
+ * Constructs dynamic Gmail search queries with exact date bounds:
+ * - Initial sync: 90 days back from syncExecutionTime
+ * - Incremental sync: from lastSyncTime with 24-hour safety buffer for timezone & clock tolerance
+ */
+export function constructGmailSyncQuery(options: {
+  lastSyncTime?: Date | string | null;
+  syncExecutionTime?: Date;
+  tier?: 'primary' | 'secondary' | 'tertiary';
+  customQuery?: string;
+}): {
+  query: string;
+  lowerBoundDate: Date;
+  isIncremental: boolean;
+  formattedDate: string;
+} {
+  if (options.customQuery) {
+    const defaultDate = options.lastSyncTime
+      ? new Date(new Date(options.lastSyncTime).getTime() - 24 * 60 * 60 * 1000)
+      : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    return {
+      query: options.customQuery,
+      lowerBoundDate: defaultDate,
+      isIncremental: Boolean(options.lastSyncTime),
+      formattedDate: formatDateForGmailQuery(defaultDate),
+    };
+  }
+
+  const executionTime = options.syncExecutionTime
+    ? new Date(options.syncExecutionTime)
+    : new Date();
+
+  let lowerBoundDate: Date;
+  let isIncremental = false;
+
+  if (options.lastSyncTime) {
+    // 24-hour buffer prevents UTC/WIB timezone boundary clipping and accommodates Gmail index latency
+    const bufferedMillis =
+      new Date(options.lastSyncTime).getTime() - 24 * 60 * 60 * 1000;
+    lowerBoundDate = new Date(bufferedMillis);
+    isIncremental = true;
+  } else {
+    // Exactly 90 days back from syncExecutionTime for initial backfill
+    lowerBoundDate = new Date(
+      executionTime.getTime() - 90 * 24 * 60 * 60 * 1000
+    );
+    isIncremental = false;
+  }
+
+  const formattedDate = formatDateForGmailQuery(lowerBoundDate);
+  const tier = options.tier || 'primary';
+
+  let query = '';
+  if (tier === 'primary') {
+    // Comprehensive transactional query covering all receipt, invoice, mobile banking, QRIS, and e-wallet patterns
+    query = `(receipt OR invoice OR tagihan OR struk OR payment OR pembayaran OR transfer OR order OR pesanan OR subscription OR langganan OR debit OR bill OR transaksi OR "bukti transaksi" OR "notifikasi transaksi" OR "bukti transfer" OR "bukti pembayaran" OR QRIS OR "BI-FAST" OR "top up" OR purchase OR pembelian OR "berhasil" OR "Google Play" OR "Google AI" OR "Google One" OR "Google Cloud" OR YouTube OR AWS OR OpenAI OR ChatGPT OR Claude OR GitHub OR Netflix OR Spotify OR BCA OR Mandiri OR BNI OR BRI OR BSI OR CIMB OR Jago OR Jenius OR Permata OR Danamon OR OCBC OR SeaBank OR Superbank OR GoPay OR Shopee OR Grab OR Tokopedia OR DANA OR OVO OR LinkAja OR Flip OR PLN OR Telkomsel OR Indosat OR XL OR Apple OR Steam OR Wise OR PayPal) after:${formattedDate}`;
+  } else if (tier === 'secondary') {
+    query = `(receipt OR invoice OR bill OR tagihan OR payment OR transfer OR transaksi OR order OR struk OR debit OR "Rp" OR "IDR" OR "Total" OR "Status Transaksi") after:${formattedDate}`;
+  } else {
+    query = `after:${formattedDate}`;
+  }
+
+  return {
+    query,
+    lowerBoundDate,
+    isIncremental,
+    formattedDate,
+  };
 }
 
 export async function fetchInboxExpenseEmails(
   accessToken: string,
-  maxResults = 20,
-  customQuery?: string
+  optionsOrMaxResults: number | FetchExpenseEmailsOptions = 25,
+  legacyCustomQuery?: string
 ): Promise<FetchEmailResult> {
-  const defaultQuery =
-    'subject:(receipt OR invoice OR statement OR order OR payment OR transaction OR charge OR debit OR subscription OR alert OR bill OR "notifikasi transaksi" OR "bukti transaksi" OR "bukti transfer" OR "resi pembayaran" OR "tanda terima" OR "tanda terima pesanan" OR "Google Play" OR "Google AI" OR "Google One" OR "Google Cloud" OR "Google Workspace" OR "YouTube" OR AWS OR "Amazon Web Services" OR OpenAI OR ChatGPT OR Claude OR Anthropic OR GitHub OR Copilot OR Cursor OR Midjourney OR Notion OR Figma OR Canva OR Adobe OR Vercel OR Supabase OR Cloudflare OR Netflix OR Spotify OR struk OR tagihan OR kuitansi OR e-statement OR qris OR "uang keluar" OR "pembayaran berhasil" OR "transaksi berhasil" OR wondr OR myBCA OR Livin OR BRImo OR BYOND OR bale OR Jenius OR OCTO OR blu OR Superbank OR SeaBank OR Allo OR Danamon OR Mega OR SimobiPlus) OR from:(google.com OR googleplay-noreply@google.com OR payments-noreply@google.com OR google-cloud-compliance@google.com OR amazon.com OR aws.amazon.com OR microsoft.com OR openai.com OR anthropic.com OR github.com OR vercel.com OR supabase.com OR notion.so OR figma.com OR canva.com OR adobe.com OR zoom.us OR netflix.com OR spotify.com OR bca.co.id OR klikbca.com OR bankmandiri.co.id OR bri.co.id OR bni.co.id OR jago.com OR btpn.com OR jenius.com OR cimbniaga.co.id OR permatabank.co.id OR bankbsi.co.id OR seabank.co.id OR bcadigital.co.id OR allobank.com OR superbank.id OR bankraya.co.id OR linebank.co.id OR uob.co.id OR dbs.com OR banksinarmas.com OR bankmuamalat.co.id OR maybank.co.id OR danamon.co.id OR bankmega.com OR ocbc.id OR ocbcnisp.com OR panin.co.id OR bankneo.co.id OR gojek.com OR go-jek.com OR ovo.id OR dana.id OR shopee.co.id OR tokopedia.com OR linkaja.id OR astrapay.com OR telkomsel.co.id OR pln.co.id OR paypal.com OR stripe.com OR apple.com OR uber.com)';
+  const options: FetchExpenseEmailsOptions =
+    typeof optionsOrMaxResults === 'number'
+      ? {
+          maxResults: optionsOrMaxResults,
+          customQuery: legacyCustomQuery,
+          paginateAll: true,
+        }
+      : {
+          paginateAll: true,
+          ...optionsOrMaxResults,
+        };
 
-  const query = customQuery || defaultQuery;
+  const maxResults = options.maxResults || 25;
+  const fetchImpl =
+    options.fetchFn ||
+    (typeof window !== 'undefined' ? window.fetch.bind(window) : fetch);
+  const syncExecutionTime = options.syncExecutionTime || new Date();
 
-  const listUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(
-    query
-  )}&maxResults=${maxResults}`;
+  // Build multi-tier search queries with dynamic date bounding:
+  const primary = constructGmailSyncQuery({
+    lastSyncTime: options.lastSyncTime,
+    syncExecutionTime,
+    tier: 'primary',
+    customQuery: options.customQuery,
+  });
+
+  const secondary = constructGmailSyncQuery({
+    lastSyncTime: options.lastSyncTime,
+    syncExecutionTime,
+    tier: 'secondary',
+    customQuery: options.customQuery,
+  });
+
+  const tertiary = constructGmailSyncQuery({
+    lastSyncTime: options.lastSyncTime,
+    syncExecutionTime,
+    tier: 'tertiary',
+    customQuery: options.customQuery,
+  });
+
+  const queriesToTry = options.customQuery
+    ? [options.customQuery]
+    : [primary.query, secondary.query, tertiary.query];
 
   try {
-    const listRes = await fetch(listUrl, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json',
-      },
-      signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined,
-    });
+    const rawMessageMap = new Map<string, { id: string; threadId?: string }>();
+    let totalEstimate = 0;
 
-    if (!listRes.ok) {
-      const errText = await listRes.text().catch(() => '');
-      console.warn(`Gmail API notice (${listRes.status}): ${errText}`);
-      return { messages: [], totalFound: 0 };
+    for (const queryToRun of queriesToTry) {
+      let pageToken: string | undefined = undefined;
+      let pageCount = 0;
+      const maxPages = options.maxPages || (options.paginateAll ? 10 : 1);
+      const pageSize = Math.min(maxResults, 100);
+
+      do {
+        pageCount++;
+        let listUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(
+          queryToRun
+        )}&maxResults=${pageSize}`;
+
+        if (pageToken) {
+          listUrl += `&pageToken=${encodeURIComponent(pageToken)}`;
+        }
+
+        try {
+          const listRes = await fetchImpl(listUrl, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+            },
+            signal:
+              typeof AbortSignal !== 'undefined' && AbortSignal.timeout
+                ? AbortSignal.timeout(10000)
+                : undefined,
+          });
+
+          if (!listRes.ok) {
+            const errText = await listRes.text().catch(() => '');
+            console.warn(
+              `Gmail API query notice (${listRes.status}): ${errText}`
+            );
+            break;
+          }
+
+          const listData = await listRes.json();
+          if (
+            Array.isArray(listData.messages) &&
+            listData.messages.length > 0
+          ) {
+            for (const msg of listData.messages) {
+              if (msg.id && !rawMessageMap.has(msg.id)) {
+                rawMessageMap.set(msg.id, msg);
+              }
+            }
+            totalEstimate = Math.max(
+              totalEstimate,
+              listData.resultSizeEstimate || rawMessageMap.size
+            );
+          }
+
+          pageToken = listData.nextPageToken || undefined;
+        } catch (qErr) {
+          console.warn('Gmail query page attempt notice:', qErr);
+          break;
+        }
+      } while (pageToken && pageCount < maxPages && options.paginateAll);
+
+      // If we got enough messages or satisfied query, avoid running looser fallback tiers
+      if (rawMessageMap.size >= maxResults || options.customQuery) {
+        break;
+      }
     }
 
-    const listData = await listRes.json();
-    const rawMessageList = listData.messages || [];
+    const rawMessageList = Array.from(rawMessageMap.values());
 
     if (rawMessageList.length === 0) {
       return { messages: [], totalFound: 0 };
     }
 
+    // SPEED OPTIMIZATION: Filter out known processed emails BEFORE downloading their full bodies
+    const knownSet = options.knownProcessedEmailIds
+      ? options.knownProcessedEmailIds instanceof Set
+        ? options.knownProcessedEmailIds
+        : new Set(options.knownProcessedEmailIds)
+      : null;
+
+    const unreadMessageList = knownSet
+      ? rawMessageList.filter((item) => !knownSet.has(item.id))
+      : rawMessageList;
+
     // Fetch individual message details in parallel in chunks of 5 for rate safety
-    const itemsToFetch = rawMessageList.slice(0, maxResults);
+    const itemsToFetch = options.paginateAll
+      ? unreadMessageList.slice(
+          0,
+          Math.max(maxResults, unreadMessageList.length)
+        )
+      : unreadMessageList.slice(0, maxResults);
     const resolved: (GmailRawMessage | null)[] = [];
     const CHUNK_SIZE = 5;
 
@@ -106,16 +346,17 @@ export async function fetchInboxExpenseEmails(
       const chunk = itemsToFetch.slice(i, i + CHUNK_SIZE);
       const chunkPromises = chunk.map(async (item: { id: string }) => {
         try {
-          const msgRes = await fetch(
+          const msgRes = await fetchImpl(
             `https://gmail.googleapis.com/gmail/v1/users/me/messages/${item.id}?format=full`,
             {
               headers: {
                 Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
               },
-              signal: AbortSignal.timeout
-                ? AbortSignal.timeout(5000)
-                : undefined,
+              signal:
+                typeof AbortSignal !== 'undefined' && AbortSignal.timeout
+                  ? AbortSignal.timeout(8000)
+                  : undefined,
             }
           );
           if (!msgRes.ok) return null;
@@ -144,8 +385,14 @@ export async function fetchInboxExpenseEmails(
                   parseInt(msgData.internalDate || '0', 10)
                 ).toISOString(),
               to: headers['to'] || '',
+              'authentication-results':
+                headers['authentication-results'] ||
+                headers['arc-authentication-results'] ||
+                '',
+              'received-spf': headers['received-spf'] || '',
+              'dkim-signature': headers['dkim-signature'] || '',
             },
-            bodyText: bodyText.slice(0, 3000), // Trim body to prevent token blowup while giving sufficient receipt lines
+            bodyText: bodyText.slice(0, 4000), // Sufficient for multi-item invoices & bank notifications
           };
           return parsed;
         } catch (e) {
@@ -160,7 +407,7 @@ export async function fetchInboxExpenseEmails(
 
     return {
       messages,
-      totalFound: listData.resultSizeEstimate || messages.length,
+      totalFound: totalEstimate || messages.length,
     };
   } catch (err: any) {
     console.warn(

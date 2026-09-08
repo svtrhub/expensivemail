@@ -113,21 +113,21 @@ export const MenuBar: React.FC<MenuBarProps> = ({
                         }}
                         className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between text-xs transition-colors cursor-pointer ${
                           isSelected
-                            ? 'bg-[#F0F4F8] dark:bg-[#163354] text-[#051C2C] dark:text-white font-bold'
-                            : 'hover:bg-[#F0F4F8] dark:hover:bg-[#112842] text-slate-700 dark:text-slate-200'
+                            ? 'bg-[#163354] text-white font-bold'
+                            : 'hover:bg-white/10 text-slate-200'
                         }`}
                       >
                         <div className="flex items-center space-x-2">
                           <span>{item.flag}</span>
-                          <span className="font-semibold text-[#051C2C] dark:text-white">
+                          <span className="font-semibold text-white">
                             {item.code}
                           </span>
-                          <span className="text-slate-400 dark:text-slate-400 text-[10px]">
+                          <span className="text-slate-400 text-[10px]">
                             ({item.symbol})
                           </span>
                         </div>
                         {isSelected && (
-                          <Check className="w-3 h-3 text-[#2251FF] dark:text-[#38BDF8]" />
+                          <Check className="w-3 h-3 text-[#38BDF8]" />
                         )}
                       </button>
                     );
@@ -144,14 +144,14 @@ export const MenuBar: React.FC<MenuBarProps> = ({
               onClick={() => toggleDropdown('languages')}
               className={`flex items-center space-x-1 px-1.5 sm:px-2 py-0.5 rounded transition-colors cursor-pointer text-[10px] sm:text-[11px] font-semibold ${
                 openDropdown === 'languages'
-                  ? 'bg-[#F0F4F8] dark:bg-[#163354] text-[#051C2C] dark:text-white'
-                  : 'hover:bg-[#F0F4F8] dark:hover:bg-[#163354] text-slate-700 dark:text-slate-200'
+                  ? 'bg-[#163354] text-white'
+                  : 'hover:bg-[#163354] text-slate-200'
               }`}
               title="Quick Language Switcher"
             >
               <span>{language === 'id' ? '🇮🇩' : '🇺🇸'}</span>
               <span>{language === 'id' ? 'ID' : 'EN'}</span>
-              <ChevronDown className="w-2.5 h-2.5 text-slate-400 dark:text-slate-400" />
+              <ChevronDown className="w-2.5 h-2.5 text-slate-400" />
             </button>
 
             {openDropdown === 'languages' && (

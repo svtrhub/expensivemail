@@ -30,8 +30,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <select
           id={selectId}
           ref={ref}
-          style={{ colorScheme: 'dark', ...props.style }}
-          className={`w-full rounded-lg border border-white/15 bg-white/10 dark:bg-white/10 backdrop-blur-md px-3 py-2 text-sm text-white min-h-[44px] transition-colors focus:border-[#2251FF] focus:outline-none focus:ring-2 focus:ring-[#2251FF]/30 disabled:cursor-not-allowed disabled:opacity-50 ${
+          style={{
+            colorScheme: 'dark',
+            backgroundColor: '#071524',
+            color: '#f8fafc',
+            ...props.style,
+          }}
+          className={`w-full rounded-lg border border-white/20 bg-[#071524] px-3 py-2 text-sm text-white min-h-[44px] transition-colors focus:border-[#38BDF8] focus:outline-none focus:ring-2 focus:ring-[#38BDF8]/30 disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-[#071524] [&>option]:text-[#f8fafc] [&>optgroup]:bg-[#071524] [&>optgroup]:text-[#f8fafc] ${
             error
               ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
               : ''

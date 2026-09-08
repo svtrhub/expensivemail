@@ -123,49 +123,63 @@ export const BankModal: React.FC<BankModalProps> = ({
 
           {/* Existing Accounts List */}
           <div className="my-4 space-y-2.5 max-h-52 overflow-y-auto pr-1">
-            {accounts.map((acc) => (
+            {accounts.length === 0 ? (
               <div
-                key={acc.id}
-                className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#081827] border border-[#E2E8F0] dark:border-[#1E3A5F] flex items-center justify-between hover:border-[#2251FF]/40 transition-colors"
+                id="bank-modal-empty-accounts"
+                className="p-4 text-center rounded-xl bg-[#F8F9FA] dark:bg-[#081827] border border-dashed border-[#CBD5E1] dark:border-[#1E3A5F]"
               >
-                <div className="flex items-center space-x-3">
-                  <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0"
-                    style={{ backgroundColor: acc.color }}
-                  >
-                    {acc.name.includes('wondr') ? (
-                      <Smartphone className="w-4 h-4" />
-                    ) : acc.name.includes('GoPay') ||
-                      acc.name.includes('OVO') ||
-                      acc.name.includes('DANA') ? (
-                      <Wallet className="w-4 h-4" />
-                    ) : (
-                      <Building2 className="w-4 h-4" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-1.5">
-                      <h4 className="text-xs font-bold text-[#051C2C] dark:text-white">
-                        {acc.name}
-                      </h4>
+                <Building2 className="w-6 h-6 text-slate-400 mx-auto mb-1.5" />
+                <p className="text-xs font-semibold text-[#051C2C] dark:text-white">
+                  Belum ada rekening atau kartu terhubung
+                </p>
+                <p className="text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5">
+                  Tambahkan rekening mobile banking atau dompet digital Anda di
+                  bawah.
+                </p>
+              </div>
+            ) : (
+              accounts.map((acc) => (
+                <div
+                  key={acc.id}
+                  className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#081827] border border-[#E2E8F0] dark:border-[#1E3A5F] flex items-center justify-between hover:border-[#2251FF]/40 transition-colors"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0"
+                      style={{ backgroundColor: acc.color }}
+                    >
+                      {acc.name.includes('wondr') ? (
+                        <Smartphone className="w-4 h-4" />
+                      ) : acc.name.includes('GoPay') ||
+                        acc.name.includes('OVO') ||
+                        acc.name.includes('DANA') ? (
+                        <Wallet className="w-4 h-4" />
+                      ) : (
+                        <Building2 className="w-4 h-4" />
+                      )}
                     </div>
-                    <p className="text-[11px] text-[#64748B] dark:text-slate-400 font-mono">
-                      {acc.institution} • {acc.accountNumberMask}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  <div className="text-right">
-                    <span className="text-xs font-bold font-mono text-[#051C2C] dark:text-white">
-                      {formatCurrency(acc.balance, currency)}
-                    </span>
-                    <span className="block text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
-                      Live Sync
-                    </span>
+                    <div>
+                      <div className="flex items-center space-x-1.5">
+                        <h4 className="text-xs font-bold text-[#051C2C] dark:text-white">
+                          {acc.name}
+                        </h4>
+                      </div>
+                      <p className="text-[11px] text-[#64748B] dark:text-slate-400 font-mono">
+                        {acc.institution} • {acc.accountNumberMask}
+                      </p>
+                    </div>
                   </div>
 
-                  {accounts.length > 1 && (
+                  <div className="flex items-center space-x-3">
+                    <div className="text-right">
+                      <span className="text-xs font-bold font-mono text-[#051C2C] dark:text-white">
+                        {formatCurrency(acc.balance, currency)}
+                      </span>
+                      <span className="block text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                        Live Sync
+                      </span>
+                    </div>
+
                     <button
                       onClick={() => onDeleteAccount(acc.id)}
                       className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer"
@@ -173,10 +187,10 @@ export const BankModal: React.FC<BankModalProps> = ({
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* Add Account Form or Toggle Button */}
@@ -266,35 +280,30 @@ export const BankModal: React.FC<BankModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-[#051C2C] dark:text-slate-200 block mb-1">
+                  <label className="text-[11px] font-bold text-slate-200 block mb-1">
                     Tipe Rekening:
                   </label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as any)}
-                    className="w-full px-2.5 py-1.5 bg-white dark:bg-[#0D2238] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs text-[#051C2C] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#2251FF]"
+                    style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+                    className="w-full px-2.5 py-1.5 bg-[#071524] border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#38BDF8] [&>option]:bg-[#071524] [&>option]:text-white"
                   >
                     <option
                       value="checking"
-                      className="dark:bg-[#0D2238] dark:text-white"
+                      className="bg-[#071524] text-white"
                     >
                       Tabungan / Mobile App
                     </option>
-                    <option
-                      value="credit"
-                      className="dark:bg-[#0D2238] dark:text-white"
-                    >
+                    <option value="credit" className="bg-[#071524] text-white">
                       Kartu Kredit
                     </option>
-                    <option
-                      value="savings"
-                      className="dark:bg-[#0D2238] dark:text-white"
-                    >
+                    <option value="savings" className="bg-[#071524] text-white">
                       Deposito / Savings
                     </option>
                     <option
                       value="digital_wallet"
-                      className="dark:bg-[#0D2238] dark:text-white"
+                      className="bg-[#071524] text-white"
                     >
                       E-Wallet (GoPay/OVO/DANA)
                     </option>
@@ -307,7 +316,8 @@ export const BankModal: React.FC<BankModalProps> = ({
                   </label>
                   <input
                     type="number"
-                    step={currency === 'IDR' ? '1000' : '0.01'}
+                    step="any"
+                    min="0"
                     value={balance}
                     onChange={(e) => setBalance(e.target.value)}
                     className="w-full px-2.5 py-1.5 bg-white dark:bg-[#0D2238] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs text-[#051C2C] dark:text-white font-mono focus:outline-none focus:ring-1 focus:ring-[#2251FF]"

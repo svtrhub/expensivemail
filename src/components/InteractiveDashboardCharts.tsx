@@ -1,8 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Expense, SupportedCurrency } from '../types';
 import { formatCurrency, convertCurrency } from '../services/currency';
 import { LanguageCode } from '../services/translations';
-import { TrendingUp, PieChart, BarChart3, Filter } from 'lucide-react';
+import {
+  TrendingUp,
+  PieChart,
+  BarChart3,
+  Filter,
+  SlidersHorizontal,
+  ChevronDown,
+  Layers,
+  Calendar,
+  X,
+  Sparkles,
+} from 'lucide-react';
 
 interface InteractiveDashboardChartsProps {
   expenses: Expense[];
@@ -95,6 +106,37 @@ export const InteractiveDashboardCharts: React.FC<
   const [chartViewMode, setChartViewMode] = useState<
     'both' | 'trend' | 'category'
   >('both');
+  const [isControlsOpen, setIsControlsOpen] = useState<boolean>(false);
+  const controlsRef = useRef<HTMLDivElement>(null);
+
+  const TIME_STEPS: TimeRange[] = ['7d', '30d', '90d', 'all'];
+
+  // Handle outside click to close controls popover
+  useEffect(() => {
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      if (
+        controlsRef.current &&
+        !controlsRef.current.contains(e.target as Node)
+      ) {
+        setIsControlsOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsControlsOpen(false);
+      }
+    };
+    if (isControlsOpen) {
+      document.addEventListener('mousedown', handlePointerDown);
+      document.addEventListener('touchstart', handlePointerDown);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isControlsOpen]);
 
   // Convert expenses to active currency amounts
   const processedExpenses = useMemo(() => {
@@ -272,8 +314,8 @@ export const InteractiveDashboardCharts: React.FC<
 
     let currentAngle = 0;
     const center = 100;
-    const radius = 75;
-    const innerRadius = 52;
+    const radius = 86;
+    const innerRadius = 64;
 
     return categories.map((item) => {
       const angle = (item.percentage / 100) * 360;
@@ -334,7 +376,11 @@ export const InteractiveDashboardCharts: React.FC<
   return (
     <div id="interactive-dashboard-charts" className="space-y-4 mb-6">
       {/* Top Controls Header */}
-      <div className="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-[#A3E2FF]/20 shadow-xl">
+      <div
+        className={`glass-panel relative ${
+          isControlsOpen ? 'z-40' : 'z-20'
+        } p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-[#A3E2FF]/20 shadow-xl`}
+      >
         <div className="flex items-center space-x-3">
           <div className="p-2.5 rounded-xl bg-[#2251FF]/20 text-[#6FE0FF] border border-[#6FE0FF]/30 shadow-xs shrink-0">
             <BarChart3 className="w-5 h-5" />
@@ -358,74 +404,207 @@ export const InteractiveDashboardCharts: React.FC<
           </div>
         </div>
 
-        {/* Action Controls: View Mode & Time Horizon Selector */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* View Mode Toggle */}
-          <div
-            className="inline-flex rounded-xl bg-[#0A1120]/80 p-1 border border-white/10 text-xs font-bold"
-            role="group"
-            aria-label="Chart View Mode"
+        {/* Action Controls: Unified Button that opens interactive Slider & View Popover */}
+        <div className="relative z-50 w-full sm:w-auto" ref={controlsRef}>
+          {/* Single Trigger Button: Simplified to "Graph Settings" */}
+          <button
+            id="chart-controls-slider-trigger"
+            type="button"
+            onClick={() => setIsControlsOpen((prev) => !prev)}
+            className={`inline-flex items-center justify-between gap-2.5 px-3.5 py-2.5 min-h-[44px] w-full sm:w-auto rounded-xl bg-[#0A1120]/90 hover:bg-[#0F1B33] border text-xs font-semibold text-white shadow-md transition-all cursor-pointer select-none active:scale-[0.98] ${
+              isControlsOpen
+                ? 'border-[#38BDF8] ring-2 ring-[#38BDF8]/20 bg-[#0F1B33]'
+                : 'border-[#A3E2FF]/30 hover:border-[#6FE0FF]/60'
+            }`}
+            aria-expanded={isControlsOpen}
+            aria-label={
+              language === 'id' ? 'Pengaturan Grafik' : 'Graph Settings'
+            }
           >
-            <button
-              type="button"
-              onClick={() => setChartViewMode('both')}
-              className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                chartViewMode === 'both'
-                  ? 'bg-[#2251FF] text-[#EAF4FF] shadow-xs'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-              aria-label="Show All Charts"
-            >
-              {language === 'id' ? 'Semua' : 'All'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setChartViewMode('trend')}
-              className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                chartViewMode === 'trend'
-                  ? 'bg-[#2251FF] text-[#EAF4FF] shadow-xs'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-              aria-label="Show Trend Line Only"
-            >
-              {language === 'id' ? 'Tren' : 'Trend'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setChartViewMode('category')}
-              className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                chartViewMode === 'category'
-                  ? 'bg-[#2251FF] text-[#EAF4FF] shadow-xs'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-              aria-label="Show Category Breakdown Only"
-            >
-              {language === 'id' ? 'Kategori' : 'Category'}
-            </button>
-          </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 rounded-lg bg-[#38BDF8]/20 text-[#38BDF8] flex items-center justify-center shrink-0">
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+              </div>
+              <span className="font-bold text-white text-xs">
+                {language === 'id' ? 'Pengaturan Grafik' : 'Graph Settings'}
+              </span>
+            </div>
 
-          {/* Time Range Selector */}
-          <div
-            className="inline-flex rounded-xl bg-[#0A1120]/80 p-1 border border-white/10 text-xs font-bold font-mono"
-            role="group"
-            aria-label="Time Horizon Selector"
-          >
-            {(['7d', '30d', '90d', 'all'] as TimeRange[]).map((range) => (
-              <button
-                key={range}
-                type="button"
-                onClick={() => setTimeRange(range)}
-                className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer uppercase ${
-                  timeRange === range
-                    ? 'bg-[#38BDF8] text-[#0A1120] font-extrabold shadow-xs'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-                aria-label={`Time range ${range}`}
-              >
-                {range}
-              </button>
-            ))}
-          </div>
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-slate-300 transition-transform duration-200 shrink-0 ${
+                isControlsOpen ? 'rotate-180 text-[#38BDF8]' : ''
+              }`}
+            />
+          </button>
+
+          {/* Interactive Slider & Customizer Popover */}
+          {isControlsOpen && (
+            <div
+              className="glass-dropdown absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-80 md:w-96 max-w-[calc(100vw-2rem)] rounded-2xl p-4 z-50 shadow-2xl border border-[#A3E2FF]/40 backdrop-blur-2xl animate-popover text-xs space-y-4 max-h-[calc(100dvh-12rem)] overflow-y-auto"
+              role="dialog"
+              aria-label={
+                language === 'id'
+                  ? 'Pengaturan Tampilan Grafik'
+                  : 'Chart View Settings'
+              }
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
+                <div className="flex items-center space-x-2">
+                  <SlidersHorizontal className="w-4 h-4 text-[#38BDF8]" />
+                  <span className="font-bold text-white text-sm font-editorial">
+                    {language === 'id'
+                      ? 'Kustomisasi Visualisasi'
+                      : 'Visualization Controls'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsControlsOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  aria-label="Close settings"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Slider Section: Time Horizon */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="time-horizon-slider"
+                    className="font-semibold text-slate-200 flex items-center space-x-1.5"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-[#38BDF8]" />
+                    <span>
+                      {language === 'id'
+                        ? 'Rentang Waktu (Slider)'
+                        : 'Time Horizon Slider'}
+                    </span>
+                  </label>
+                  <span className="font-mono font-bold text-xs text-[#38BDF8] bg-[#38BDF8]/15 px-2 py-0.5 rounded-md border border-[#38BDF8]/30">
+                    {timeRange === '7d'
+                      ? language === 'id'
+                        ? '7 Hari Terakhir'
+                        : 'Last 7 Days'
+                      : timeRange === '30d'
+                        ? language === 'id'
+                          ? '30 Hari Terakhir'
+                          : 'Last 30 Days'
+                        : timeRange === '90d'
+                          ? language === 'id'
+                            ? '90 Hari Terakhir'
+                            : 'Last 90 Days'
+                          : language === 'id'
+                            ? 'Semua Waktu'
+                            : 'All Time Data'}
+                  </span>
+                </div>
+
+                {/* Range Slider Track */}
+                <div className="pt-1 px-1">
+                  <input
+                    id="time-horizon-slider"
+                    type="range"
+                    min={0}
+                    max={3}
+                    step={1}
+                    value={TIME_STEPS.indexOf(timeRange)}
+                    onChange={(e) =>
+                      setTimeRange(TIME_STEPS[Number(e.target.value)])
+                    }
+                    className="w-full accent-[#38BDF8] h-2 bg-[#0A1120] border border-white/20 rounded-lg cursor-pointer appearance-none transition-all focus:outline-hidden"
+                  />
+                  {/* Step Labels */}
+                  <div className="flex justify-between items-center text-[10px] font-mono font-bold text-slate-400 mt-1.5">
+                    {TIME_STEPS.map((step, idx) => {
+                      const isActive = timeRange === step;
+                      return (
+                        <button
+                          key={step}
+                          type="button"
+                          onClick={() => setTimeRange(step)}
+                          className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer uppercase ${
+                            isActive
+                              ? 'bg-[#38BDF8] text-[#0A1120] font-extrabold shadow-2xs'
+                              : 'hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {step}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* View Layout Mode Selector */}
+              <div className="space-y-2 pt-2 border-t border-white/10">
+                <label className="font-semibold text-slate-200 flex items-center space-x-1.5">
+                  <Layers className="w-3.5 h-3.5 text-[#38BDF8]" />
+                  <span>
+                    {language === 'id'
+                      ? 'Tata Letak Grafik'
+                      : 'Chart Layout View'}
+                  </span>
+                </label>
+                <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[#0A1120]/90 border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setChartViewMode('both')}
+                    className={`flex flex-col items-center justify-center py-2 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      chartViewMode === 'both'
+                        ? 'bg-[#2251FF] text-white shadow-xs'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Layers className="w-4 h-4 mb-1" />
+                    <span>{language === 'id' ? 'Semua' : 'All'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setChartViewMode('trend')}
+                    className={`flex flex-col items-center justify-center py-2 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      chartViewMode === 'trend'
+                        ? 'bg-[#2251FF] text-white shadow-xs'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <TrendingUp className="w-4 h-4 mb-1" />
+                    <span>
+                      {language === 'id' ? 'Tren Saja' : 'Trend Only'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setChartViewMode('category')}
+                    className={`flex flex-col items-center justify-center py-2 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      chartViewMode === 'category'
+                        ? 'bg-[#2251FF] text-white shadow-xs'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <PieChart className="w-4 h-4 mb-1" />
+                    <span>{language === 'id' ? 'Kategori' : 'Category'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Live Period Filter Summary */}
+              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">
+                  {language === 'id'
+                    ? `${filteredByTimeExpenses.length} transaksi di rentang ini`
+                    : `${filteredByTimeExpenses.length} records in this window`}
+                </span>
+                <span className="font-mono font-bold text-[#6FE0FF]">
+                  {formatCurrency(totalPeriodSpend, currency)}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -712,7 +891,7 @@ export const InteractiveDashboardCharts: React.FC<
             {categoryData.grandTotal > 0 ? (
               <div className="flex flex-col items-center justify-center py-2 my-1">
                 {/* SVG Donut */}
-                <div className="relative w-64 h-64 sm:w-72 sm:h-72 shrink-0">
+                <div className="relative w-72 h-72 sm:w-80 sm:h-80 md:w-[320px] md:h-[320px] shrink-0">
                   <svg
                     viewBox="0 0 200 200"
                     className="w-full h-full overflow-visible"
@@ -788,15 +967,27 @@ export const InteractiveDashboardCharts: React.FC<
                   </svg>
 
                   {/* Donut Center Metrics Display */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-3">
-                    <span className="text-xs font-mono uppercase font-bold text-slate-300 block truncate max-w-[150px]">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-4">
+                    <span className="text-[11px] sm:text-xs font-mono uppercase font-bold text-slate-300 block truncate max-w-[160px]">
                       {hoveredCategory ||
                         activeCategoryFilter ||
-                        (language === 'id'
-                          ? 'TOTAL PENGELUARAN'
-                          : 'TOTAL EXPENDITURE')}
+                        (timeRange === '7d'
+                          ? language === 'id'
+                            ? 'TOTAL (7 HARI)'
+                            : 'TOTAL (LAST 7D)'
+                          : timeRange === '30d'
+                            ? language === 'id'
+                              ? 'TOTAL (30 HARI)'
+                              : 'TOTAL (LAST 30D)'
+                            : timeRange === '90d'
+                              ? language === 'id'
+                                ? 'TOTAL (90 HARI)'
+                                : 'TOTAL (LAST 90D)'
+                              : language === 'id'
+                                ? 'TOTAL SEMUA'
+                                : 'TOTAL ALL-TIME')}
                     </span>
-                    <span className="text-lg sm:text-2xl font-extrabold font-mono text-white truncate max-w-[180px] mt-1 text-readability-shadow">
+                    <span className="text-xl sm:text-2xl font-extrabold font-mono text-white truncate max-w-[190px] mt-0.5 tracking-tight text-readability-shadow">
                       {hoveredCategory
                         ? formatCurrency(
                             categoryData.categories.find(
@@ -806,7 +997,7 @@ export const InteractiveDashboardCharts: React.FC<
                           )
                         : formatCurrency(categoryData.grandTotal, currency)}
                     </span>
-                    <span className="text-xs font-bold text-[#6FE0FF] mt-1 bg-[#2251FF]/40 px-2.5 py-0.5 rounded-full border border-[#6FE0FF]/40">
+                    <span className="text-[11px] sm:text-xs font-bold text-[#6FE0FF] mt-1.5 bg-[#2251FF]/40 px-3 py-0.5 rounded-full border border-[#6FE0FF]/40 inline-flex items-center justify-center max-w-[170px] truncate">
                       {hoveredCategory
                         ? `${categoryData.categories.find((c) => c.category === hoveredCategory)?.percentage.toFixed(1)}%`
                         : `${categoryData.categories.length} ${language === 'id' ? 'Kategori Terdaftar' : 'Categories Active'}`}

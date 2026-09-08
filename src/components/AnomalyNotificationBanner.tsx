@@ -31,12 +31,17 @@ export const AnomalyNotificationBanner: React.FC<
   onDismissBanner,
 }) => {
   const isID = language === 'id';
-  const anomalies = anomalyResult?.anomalies || [];
+  const activeAnomalies = (anomalyResult?.anomalies || []).filter(
+    (a) => !a.dismissed
+  );
 
-  if (!anomalies || anomalies.length === 0) return null;
+  if (!activeAnomalies || activeAnomalies.length === 0) return null;
 
-  const topAnomaly = anomalyResult.highestAnomaly || anomalies[0];
-  const count = anomalies.length;
+  const topAnomaly =
+    anomalyResult.highestAnomaly && !anomalyResult.highestAnomaly.dismissed
+      ? anomalyResult.highestAnomaly
+      : activeAnomalies[0];
+  const count = activeAnomalies.length;
   const emailTitle =
     topAnomaly.expense?.emailMetadata?.subject ||
     topAnomaly.expense?.title ||

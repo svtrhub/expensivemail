@@ -476,14 +476,18 @@ export const CurrencyModal: React.FC<CurrencyModalProps> = ({
                       onChange={(e) =>
                         setFromCurrency(e.target.value as SupportedCurrency)
                       }
-                      className="w-full px-2.5 py-2 bg-white dark:bg-[#0D2238] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs font-bold text-[#051C2C] dark:text-white focus:ring-2 focus:ring-[#2251FF] outline-hidden cursor-pointer"
+                      style={{
+                        colorScheme: 'dark',
+                        backgroundColor: '#071524',
+                      }}
+                      className="w-full px-2.5 py-2 bg-[#071524] border border-white/20 rounded-lg text-xs font-bold text-white focus:ring-2 focus:ring-[#38BDF8] outline-hidden cursor-pointer [&>option]:bg-[#071524] [&>option]:text-white"
                     >
                       {(Object.keys(CURRENCIES) as SupportedCurrency[]).map(
                         (c) => (
                           <option
                             key={c}
                             value={c}
-                            className="dark:bg-[#0D2238] dark:text-white"
+                            className="bg-[#071524] text-white"
                           >
                             {CURRENCIES[c].flag} {c} - {CURRENCIES[c].name}
                           </option>
@@ -506,7 +510,7 @@ export const CurrencyModal: React.FC<CurrencyModalProps> = ({
 
                   {/* To Currency */}
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+                    <label className="block text-[11px] font-bold text-slate-300 mb-1">
                       {cm.toLabel}
                     </label>
                     <select
@@ -515,14 +519,18 @@ export const CurrencyModal: React.FC<CurrencyModalProps> = ({
                       onChange={(e) =>
                         setToCurrency(e.target.value as SupportedCurrency)
                       }
-                      className="w-full px-2.5 py-2 bg-white dark:bg-[#0D2238] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs font-bold text-[#051C2C] dark:text-white focus:ring-2 focus:ring-[#2251FF] outline-hidden cursor-pointer"
+                      style={{
+                        colorScheme: 'dark',
+                        backgroundColor: '#071524',
+                      }}
+                      className="w-full px-2.5 py-2 bg-[#071524] border border-white/20 rounded-lg text-xs font-bold text-white focus:ring-2 focus:ring-[#38BDF8] outline-hidden cursor-pointer [&>option]:bg-[#071524] [&>option]:text-white"
                     >
                       {(Object.keys(CURRENCIES) as SupportedCurrency[]).map(
                         (c) => (
                           <option
                             key={c}
                             value={c}
-                            className="dark:bg-[#0D2238] dark:text-white"
+                            className="bg-[#071524] text-white"
                           >
                             {CURRENCIES[c].flag} {c} - {CURRENCIES[c].name}
                           </option>

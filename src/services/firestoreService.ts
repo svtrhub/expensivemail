@@ -30,12 +30,63 @@ import {
   UserUntrustedDomainRule,
   MonthlySummaryDoc,
 } from '../types';
-import { loadUserSettingsConfig } from './userSettingsService';
+import {
+  loadUserSettingsConfig,
+  saveUserSettingsConfig,
+} from './userSettingsService';
 import {
   generateExpenseFingerprint,
   generateExpenseFingerprintResult,
 } from './senderProvenance';
 import { enqueueOutboxItem, cacheExpensesLocally } from './db';
+
+export function isLegacyMockAccountId(id: string): boolean {
+  if (!id) return false;
+  return id.startsWith('mock_legacy_acc_deprecated_');
+}
+
+export function isLegacyMockExpenseId(id: string): boolean {
+  if (!id) return false;
+  return (
+    id === 'exp_bca_starbucks' ||
+    id === 'exp_bni_pln' ||
+    id === 'exp_mandiri_tokopedia' ||
+    id === 'exp_jago_netflix' ||
+    id === 'exp_gopay_gofood' ||
+    id === 'exp_bri_pertamina' ||
+    id.startsWith('exp_mock_') ||
+    id.startsWith('exp_demo_') ||
+    id.startsWith('exp_bca_') ||
+    id.startsWith('exp_bni_') ||
+    id.startsWith('exp_mandiri_') ||
+    id.startsWith('exp_jago_') ||
+    id.startsWith('exp_gopay_')
+  );
+}
+
+/**
+ * Deeply sanitizes any object or array by removing `undefined` values and nested undefined keys
+ * before sending to Firestore, preventing "Unsupported field value: undefined" errors.
+ */
+export function sanitizeForFirestore<T>(data: T): T {
+  if (data === undefined) return null as any;
+  if (data === null || typeof data !== 'object') return data;
+  if (data instanceof Date) return data.toISOString() as any;
+
+  if (Array.isArray(data)) {
+    return data
+      .filter((item) => item !== undefined)
+      .map((item) => sanitizeForFirestore(item)) as any;
+  }
+
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(data as Record<string, any>)) {
+    if (value !== undefined) {
+      cleaned[key] = sanitizeForFirestore(value);
+    }
+  }
+  return cleaned as T;
+}
 
 export interface UserFullData {
   profile: UserProfile | null;
@@ -112,13 +163,23 @@ export async function loadUserDataFromFirestore(
 
     if (accountsRes.status === 'fulfilled') {
       accountsRes.value.forEach((d) => {
-        accounts.push({ id: d.id, ...(d.data() as any) });
+        if (!isLegacyMockAccountId(d.id)) {
+          accounts.push({ id: d.id, ...(d.data() as any) });
+        } else if (db) {
+          // Asynchronously purge obsolete mock account document from Firestore
+          deleteDoc(doc(db, `users/${userId}/bank_accounts`, d.id)).catch(
+            () => {}
+          );
+        }
       });
     }
 
     if (pagedExpensesRes.status === 'fulfilled') {
       const paged = pagedExpensesRes.value;
-      expenses.push(...paged.expenses);
+      const cleanExpenses = paged.expenses.filter(
+        (e) => !isLegacyMockExpenseId(e.id)
+      );
+      expenses.push(...cleanExpenses);
       hasMoreExpenses = paged.hasMore;
       lastExpenseDoc = paged.lastDoc;
     }
@@ -535,31 +596,52 @@ export async function syncExpenseToFirestore(
         summaryUpdate.totalCredit = increment(amount);
       }
 
-      // 2. Execute ALL 3 writes atomically together inside transaction
-      transaction.set(expenseRef, {
-        ...expenseWithVersion,
-        id: safeId,
-        userId,
-      });
+      // 2. Execute ALL 3 writes atomically together inside transaction with merge: true for idempotent writes
+      transaction.set(
+        expenseRef,
+        sanitizeForFirestore({
+          ...expenseWithVersion,
+          id: safeId,
+          userId,
+        }),
+        { merge: true }
+      );
 
-      transaction.set(fpRef, {
-        hash: fpHash,
-        expenseId: safeId,
-        merchant: expenseWithVersion.merchant,
-        amount: expenseWithVersion.amount,
-        currency: expenseWithVersion.currency,
-        date: expenseWithVersion.date,
-        isWeakFingerprint: isWeak,
-        createdAt: new Date().toISOString(),
-      });
+      transaction.set(
+        fpRef,
+        sanitizeForFirestore({
+          hash: fpHash,
+          expenseId: safeId,
+          merchant: expenseWithVersion.merchant,
+          amount: expenseWithVersion.amount,
+          currency: expenseWithVersion.currency,
+          date: expenseWithVersion.date,
+          isWeakFingerprint: isWeak,
+          createdAt: new Date().toISOString(),
+        }),
+        { merge: true }
+      );
 
-      transaction.set(summaryRef, summaryUpdate, { merge: true });
+      transaction.set(summaryRef, sanitizeForFirestore(summaryUpdate), {
+        merge: true,
+      });
 
       return true;
     });
 
     return isSuccess;
-  } catch (error) {
+  } catch (error: any) {
+    if (
+      error?.code === 'already-exists' ||
+      error?.message?.includes('already-exists') ||
+      (error?.name === 'FirebaseError' &&
+        (error as any)?.code === 'already-exists')
+    ) {
+      console.info(
+        `[Sync Expense] Expense ${safeId} or fingerprint already exists in Firestore. Safe deduplication acknowledged.`
+      );
+      return true;
+    }
     console.warn(
       '[Sync Expense Transaction Error] Queuing outbox fallback:',
       error
@@ -616,11 +698,11 @@ export async function syncProfileToFirestore(
   try {
     await setDoc(
       doc(db, 'users', userId),
-      {
+      sanitizeForFirestore({
         ...profile,
         id: userId,
         updatedAt: new Date().toISOString(),
-      },
+      }),
       { merge: true }
     );
   } catch (error) {
@@ -636,16 +718,26 @@ export async function syncBudgetsToFirestore(
   budgets: BudgetCategory[]
 ) {
   if (!db || !userId) return;
+
+  // Persist to coalesced settings config (primary read path)
+  saveUserSettingsConfig(userId, { budgets }).catch((err) =>
+    console.warn('Sync budgets config warning:', err)
+  );
+
+  // Also sync each budget document into subcollection for redundancy
   for (const b of budgets) {
     const safeId = (
       b.id || `budget_${b.category.toLowerCase().replace(/[^a-z0-9]/g, '_')}`
     ).replace(/[^a-zA-Z0-9_-]/g, '_');
     try {
-      await setDoc(doc(db, `users/${userId}/budgets`, safeId), {
-        ...b,
-        id: safeId,
-        userId,
-      });
+      await setDoc(
+        doc(db, `users/${userId}/budgets`, safeId),
+        sanitizeForFirestore({
+          ...b,
+          id: safeId,
+          userId,
+        })
+      );
     } catch (error) {
       console.warn('Sync budget warning:', error);
     }
@@ -663,11 +755,14 @@ export async function syncAccountsToFirestore(
   for (const acc of accounts) {
     const safeId = acc.id.replace(/[^a-zA-Z0-9_-]/g, '_');
     try {
-      await setDoc(doc(db, `users/${userId}/bank_accounts`, safeId), {
-        ...acc,
-        id: safeId,
-        userId,
-      });
+      await setDoc(
+        doc(db, `users/${userId}/bank_accounts`, safeId),
+        sanitizeForFirestore({
+          ...acc,
+          id: safeId,
+          userId,
+        })
+      );
     } catch (error) {
       console.warn('Sync account warning:', error);
     }
@@ -685,11 +780,14 @@ export async function syncRulesToFirestore(
   for (const rule of rules) {
     const safeId = rule.id.replace(/[^a-zA-Z0-9_-]/g, '_');
     try {
-      await setDoc(doc(db, `users/${userId}/ingestion_rules`, safeId), {
-        ...rule,
-        id: safeId,
-        userId,
-      });
+      await setDoc(
+        doc(db, `users/${userId}/ingestion_rules`, safeId),
+        sanitizeForFirestore({
+          ...rule,
+          id: safeId,
+          userId,
+        })
+      );
     } catch (error) {
       console.warn('Sync rule warning:', error);
     }
@@ -732,11 +830,14 @@ export async function syncLogToFirestore(userId: string, log: SyncLog) {
   if (!db || !userId) return;
   const safeId = log.id.replace(/[^a-zA-Z0-9_-]/g, '_');
   try {
-    await setDoc(doc(db, `users/${userId}/sync_logs`, safeId), {
-      ...log,
-      id: safeId,
-      userId,
-    });
+    await setDoc(
+      doc(db, `users/${userId}/sync_logs`, safeId),
+      sanitizeForFirestore({
+        ...log,
+        id: safeId,
+        userId,
+      })
+    );
   } catch (error) {
     console.warn('Sync log warning:', error);
   }
@@ -893,12 +994,15 @@ export async function syncUserTrustedRuleToFirestore(
   try {
     const safeId =
       rule.id || `rule_${rule.domain.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-    await setDoc(doc(db, `users/${userId}/user_trusted_domain_rules`, safeId), {
-      ...rule,
-      id: safeId,
-      userId,
-      updatedAt: new Date().toISOString(),
-    });
+    await setDoc(
+      doc(db, `users/${userId}/user_trusted_domain_rules`, safeId),
+      sanitizeForFirestore({
+        ...rule,
+        id: safeId,
+        userId,
+        updatedAt: new Date().toISOString(),
+      })
+    );
     return true;
   } catch (error) {
     console.warn('Sync user trusted rule error:', error);
@@ -937,12 +1041,15 @@ export async function batchSyncUserTrustedRulesToFirestore(
     const batch = writeBatch(db);
     for (const r of rules) {
       const safeId = r.id || `rule_${r.domain.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-      batch.set(doc(db, `users/${userId}/user_trusted_domain_rules`, safeId), {
-        ...r,
-        id: safeId,
-        userId,
-        updatedAt: new Date().toISOString(),
-      });
+      batch.set(
+        doc(db, `users/${userId}/user_trusted_domain_rules`, safeId),
+        sanitizeForFirestore({
+          ...r,
+          id: safeId,
+          userId,
+          updatedAt: new Date().toISOString(),
+        })
+      );
     }
     await batch.commit();
     return true;
@@ -965,12 +1072,12 @@ export async function syncUserUntrustedRuleToFirestore(
       rule.id || `untrusted_${rule.domain.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     await setDoc(
       doc(db, `users/${userId}/user_untrusted_domain_rules`, safeId),
-      {
+      sanitizeForFirestore({
         ...rule,
         id: safeId,
         userId,
         updatedAt: new Date().toISOString(),
-      }
+      })
     );
     return true;
   } catch (error) {
@@ -1013,12 +1120,12 @@ export async function batchSyncUserUntrustedRulesToFirestore(
         r.id || `untrusted_${r.domain.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
       batch.set(
         doc(db, `users/${userId}/user_untrusted_domain_rules`, safeId),
-        {
+        sanitizeForFirestore({
           ...r,
           id: safeId,
           userId,
           updatedAt: new Date().toISOString(),
-        }
+        })
       );
     }
     await batch.commit();

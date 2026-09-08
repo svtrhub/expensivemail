@@ -120,11 +120,18 @@ export const FixAnomalyModal: React.FC<FixAnomalyModalProps> = ({
   const handleQuickVerify = () => {
     onUpdateExpense({
       ...expense,
+      isAmountAnomaly: false,
       notes: expense.notes
         ? `${expense.notes} • [Terverifikasi Sah: ${verificationNote}]`
         : `[Terverifikasi Sah: ${verificationNote}]`,
     });
     onDismissAnomaly(expense.id);
+    if (anomaly.expenseId && anomaly.expenseId !== expense.id) {
+      onDismissAnomaly(anomaly.expenseId);
+    }
+    if (expense.emailId) {
+      onDismissAnomaly(expense.emailId);
+    }
     onClose();
   };
 
@@ -478,10 +485,10 @@ export const FixAnomalyModal: React.FC<FixAnomalyModalProps> = ({
                   type="button"
                   id="modal-quick-verify-btn"
                   onClick={handleQuickVerify}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold shadow-md transition-colors flex items-center justify-center space-x-2 cursor-pointer active:scale-98"
+                  className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold shadow-[0_2px_10px_rgba(16,185,129,0.35)] hover:shadow-[0_4px_14px_rgba(16,185,129,0.45)] focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.98]"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-white" />
-                  <span className="text-white">
+                  <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                  <span className="text-white font-semibold">
                     {language === 'id'
                       ? '✓ Konfirmasi Sah & Selesaikan Peringatan'
                       : '✓ Confirm Legitimate & Dismiss Alert'}

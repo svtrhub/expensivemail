@@ -95,19 +95,24 @@ export const AccountOverview: React.FC<AccountOverviewProps> = ({
 
       {/* Account Cards Grid or Empty State */}
       {accounts.length === 0 ? (
-        <Card className="border-dashed p-6 sm:p-8 text-center">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-3">
+        <Card
+          id="bank-accounts-empty-state"
+          className="border-dashed p-6 sm:p-8 text-center bg-white/5 border-white/15"
+        >
+          <div className="w-12 h-12 rounded-xl bg-[#2251FF]/10 text-[#60A5FA] flex items-center justify-center mx-auto mb-3">
             <Building2 className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-            {t.accounts.title}
+          <h3 className="text-sm font-bold text-white">
+            {t.accounts.noAccountsConnected || t.accounts.title}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1 mb-4 leading-relaxed">
-            {t.accounts.subtitle}
+          <p className="text-xs text-slate-300 max-w-md mx-auto mt-1 mb-4 leading-relaxed">
+            {t.accounts.noAccountsDesc || t.accounts.subtitle}
           </p>
           <Button
+            id="empty-state-add-account-btn"
             onClick={onOpenAddAccount}
             leftIcon={<Plus className="w-4 h-4" />}
+            className="bg-[#2251FF] hover:bg-[#1E4373] text-white"
           >
             <span>{t.accounts.addAccount}</span>
           </Button>

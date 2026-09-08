@@ -100,6 +100,26 @@
     letter-spacing: -0.02em;
     color: #f8fafc;
   }
+
+  /* ═══ NATIVE SELECT & DROPDOWN ACCESSIBILITY & CONTRAST ═══ */
+  select {
+    color-scheme: dark !important;
+    background-color: #071524;
+    color: #f8fafc;
+  }
+
+  select option,
+  select optgroup {
+    background-color: #071524 !important;
+    color: #f8fafc !important;
+  }
+
+  select option:hover,
+  select option:focus,
+  select option:checked {
+    background-color: #0c233c !important;
+    color: #6fe0ff !important;
+  }
 }
 
 /* Glassmorphism Keyframe Animations */

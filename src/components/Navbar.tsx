@@ -70,6 +70,7 @@ interface NavbarProps {
   onOpenAccountModal: () => void;
   onOpenCurrencyModal: () => void;
   onOpenLanguageModal?: () => void;
+  onOpenLandingPage?: () => void;
   onExportCSV?: () => void;
   onResetData?: () => void;
 }
@@ -107,6 +108,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCurrencyModal,
   onOpenSettingsModal,
   onOpenLanguageModal,
+  onOpenLandingPage,
   onExportCSV,
   onResetData,
 }) => {
@@ -159,20 +161,49 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="relative z-10 flex items-center justify-between h-10 sm:h-12 gap-1.5 sm:gap-2">
           {/* Brand Wordmark & Executive Badge (Dense & Clean) */}
           <div className="flex items-center space-x-1 sm:space-x-1.5 min-w-0 shrink">
-            <span className="font-editorial text-sm sm:text-base md:text-lg font-bold tracking-tight text-white truncate">
-              Expensive Mail
-            </span>
-            <span
-              className="inline-flex items-center justify-center p-0.5 sm:p-1 rounded-md bg-[#0D2E78]/60 text-[#60A5FA] border border-[#1E40AF]/60 shrink-0 backdrop-blur-md"
-              title={
-                language === 'id'
-                  ? 'Keamanan Terverifikasi'
-                  : 'Verified Security'
-              }
-              aria-label="Security Badge"
-            >
-              <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            </span>
+            {onOpenLandingPage ? (
+              <button
+                onClick={onOpenLandingPage}
+                className="flex items-center space-x-1 sm:space-x-1.5 min-w-0 shrink hover:opacity-85 transition-opacity cursor-pointer text-left focus:outline-none"
+                title={
+                  language === 'id'
+                    ? 'Lihat Halaman Utama / Landing Page'
+                    : 'View Landing Page'
+                }
+              >
+                <span className="font-editorial text-sm sm:text-base md:text-lg font-bold tracking-tight text-white truncate">
+                  Expensive Mail
+                </span>
+                <span
+                  className="inline-flex items-center justify-center p-0.5 sm:p-1 rounded-md bg-[#0D2E78]/60 text-[#60A5FA] border border-[#1E40AF]/60 shrink-0 backdrop-blur-md"
+                  title={
+                    language === 'id'
+                      ? 'Keamanan Terverifikasi'
+                      : 'Verified Security'
+                  }
+                  aria-label="Security Badge"
+                >
+                  <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                </span>
+              </button>
+            ) : (
+              <>
+                <span className="font-editorial text-sm sm:text-base md:text-lg font-bold tracking-tight text-white truncate">
+                  Expensive Mail
+                </span>
+                <span
+                  className="inline-flex items-center justify-center p-0.5 sm:p-1 rounded-md bg-[#0D2E78]/60 text-[#60A5FA] border border-[#1E40AF]/60 shrink-0 backdrop-blur-md"
+                  title={
+                    language === 'id'
+                      ? 'Keamanan Terverifikasi'
+                      : 'Verified Security'
+                  }
+                  aria-label="Security Badge"
+                >
+                  <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                </span>
+              </>
+            )}
           </div>
 
           {/* Right Action Bar: Unified Expense & Sync Button + Dedicated Tools Dropdown + Theme Slider + Account */}
@@ -240,17 +271,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* Expense and Sync Dropdown Hub */}
               {isExpenseSyncOpen && (
-                <div className="glass-dropdown absolute right-0 top-full mt-1.5 w-64 sm:w-72 max-w-[calc(100vw-1.5rem)] rounded-2xl p-2 z-50 animate-popover text-xs">
-                  <div className="px-2 py-1.5 border-b border-white/10 mb-1">
+                <div className="glass-dropdown absolute right-0 top-full mt-1.5 w-56 sm:w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl p-2 z-50 animate-popover text-xs">
+                  <div className="px-2.5 py-1.5 border-b border-white/10 mb-1">
                     <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs font-editorial">
                       {language === 'id'
-                        ? 'Catat & Sinkronisasi Data'
-                        : 'Expense & Ingestion Hub'}
-                    </p>
-                    <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                      {language === 'id'
-                        ? 'Pilih aksi cepat untuk transaksi'
-                        : 'Quick entry and inbox scan actions'}
+                        ? 'Catat & Sinkronisasi'
+                        : 'Expense & Ingestion'}
                     </p>
                   </div>
 
@@ -269,16 +295,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                         className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`}
                       />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-[#051C2C] dark:text-white text-xs leading-tight">
-                        {t.menu.syncInbox}
-                      </p>
-                      <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                        {language === 'id'
-                          ? 'Pindai email struk & transaksi'
-                          : 'Scan incoming receipts & feeds'}
-                      </p>
-                    </div>
+                    <p className="font-semibold text-[#051C2C] dark:text-white text-xs leading-tight truncate flex-1 min-w-0">
+                      {t.menu.syncInbox}
+                    </p>
                   </button>
 
                   {/* Option 2: Add Manual Expense / OCR */}
@@ -293,16 +312,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <div className="w-7 h-7 rounded-lg bg-[#051C2C] dark:bg-white text-white dark:text-[#051C2C] flex items-center justify-center shrink-0 shadow-2xs">
                       <Plus className="w-3.5 h-3.5" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-[#051C2C] dark:text-white text-xs leading-tight">
-                        {t.menu.addExpense}
-                      </p>
-                      <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                        {language === 'id'
-                          ? 'Input manual atau tempel teks struk'
-                          : 'Manual form entry or paste receipt'}
-                      </p>
-                    </div>
+                    <p className="font-semibold text-[#051C2C] dark:text-white text-xs leading-tight truncate flex-1 min-w-0">
+                      {t.menu.addExpense}
+                    </p>
                   </button>
                 </div>
               )}
@@ -333,15 +345,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="main-tools-menu-btn"
                 onClick={() => setIsToolsOpen(!isToolsOpen)}
-                className={`h-8 sm:h-9 w-8 sm:w-auto px-0 sm:px-2.5 inline-flex items-center justify-center space-x-0 sm:space-x-1 rounded-xl text-xs font-bold border transition-all cursor-pointer shrink-0 active:scale-95 backdrop-blur-xl ${
+                className={`h-8 sm:h-9 w-8 sm:w-auto px-0 sm:px-2.5 inline-flex items-center justify-center space-x-0 sm:space-x-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shrink-0 active:scale-95 backdrop-blur-xl ${
                   isToolsOpen
                     ? 'bg-[#2251FF]/45 border-[#2251FF] text-white shadow-[0_0_20px_rgba(34,81,255,0.35)]'
                     : 'bg-white/5 hover:bg-white/12 border-white/15 hover:border-[#2251FF]/40 text-[#E2E8F0] hover:text-white shadow-[0_4px_16px_rgba(0,0,0,0.2)]'
                 }`}
                 title={
                   language === 'id'
-                    ? 'Buka Fitur Lanjutan & Pengaturan'
-                    : 'Open Advanced Tools & Configuration'
+                    ? 'Buka Fitur & Alat'
+                    : 'Open Tools & Configuration'
                 }
                 aria-label="Operations Menu"
               >
@@ -356,34 +368,21 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* Dedicated Grouped Dropdown Panel */}
               {isToolsOpen && (
-                <div className="glass-dropdown absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] max-h-[calc(100vh-5.5rem)] overflow-y-auto rounded-2xl p-2.5 z-[100] origin-top-right shadow-2xl text-xs">
+                <div className="glass-dropdown absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] max-h-[calc(100vh-5.5rem)] overflow-y-auto rounded-2xl p-2 z-[100] origin-top-right shadow-2xl text-xs">
                   {/* Dropdown Header */}
-                  <div className="px-2.5 py-2 border-b border-white/10 mb-1 flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-[#F8FAFC] font-editorial text-xs tracking-tight">
-                        {language === 'id'
-                          ? 'Pusat Alat & Fitur'
-                          : 'Operations & Features'}
-                      </h4>
-                      <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                        {language === 'id'
-                          ? 'Otomasi, rekening, laporan & standar'
-                          : 'Automation, feeds, reports & standards'}
-                      </p>
-                    </div>
+                  <div className="px-2.5 py-2 border-b border-white/10 mb-1.5 flex items-center justify-between">
+                    <h4 className="font-bold text-[#F8FAFC] font-editorial text-xs tracking-tight">
+                      {language === 'id'
+                        ? 'Pusat Alat & Fitur'
+                        : 'Operations & Tools'}
+                    </h4>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#F0F4F8] dark:bg-[#163354] text-[#051C2C] dark:text-[#F8FAFC] font-bold border border-[#CBD5E1] dark:border-[#2A486F]">
                       {currentCurrency.code} • {language.toUpperCase()}
                     </span>
                   </div>
 
-                  {/* GROUP 1: FINANCIAL DATA & AUTOMATION FEEDS */}
-                  <div className="py-1 space-y-0.5">
-                    <div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-                      {language === 'id'
-                        ? 'Data & Otomasi'
-                        : 'Feeds & Automation'}
-                    </div>
-
+                  {/* FINANCIAL DATA & AUTOMATION TOOLS */}
+                  <div className="space-y-1">
                     {/* Connected Bank Accounts */}
                     <button
                       id="menu-open-bank-manager"
@@ -397,18 +396,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <div className="w-7 h-7 rounded-lg bg-[#F0F4F8] dark:bg-[#163354] text-[#2251FF] dark:text-[#60A5FA] flex items-center justify-center shrink-0 border border-[#E2E8F0] dark:border-[#2A486F]">
                           <CreditCard className="w-3.5 h-3.5" />
                         </div>
-                        <div className="text-left min-w-0">
-                          <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
-                            {language === 'id'
-                              ? 'Rekening Bank & Kartu'
-                              : 'Connected Bank Accounts'}
-                          </p>
-                          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                            {activeAccountsCount > 0
-                              ? `${activeAccountsCount} ${language === 'id' ? 'rekening aktif' : 'active accounts'}`
-                              : 'BCA, Mandiri, Jenius, GoPay'}
-                          </p>
-                        </div>
+                        <p className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
+                          {language === 'id'
+                            ? 'Rekening Bank & Kartu'
+                            : 'Connected Bank Accounts'}
+                        </p>
                       </div>
                       {typeof totalAccountBalance === 'number' && (
                         <span className="text-[10px] font-mono font-bold text-[#051C2C] dark:text-[#F8FAFC] bg-[#F0F4F8] dark:bg-[#163354] px-2 py-0.5 rounded border border-[#E2E8F0] dark:border-[#2A486F] shrink-0 ml-2">
@@ -431,54 +423,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-800">
                             <Zap className="w-3.5 h-3.5" />
                           </div>
-                          <div className="text-left min-w-0">
-                            <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
-                              {language === 'id'
-                                ? 'Smart Ingestion Rules'
-                                : 'Ingestion Rules Engine'}
-                            </p>
-                            <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                              {language === 'id'
-                                ? 'Kategorisasi & tag struk otomatis'
-                                : 'Auto-categorization & tagging rules'}
-                            </p>
-                          </div>
+                          <p className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
+                            {language === 'id'
+                              ? 'Smart Ingestion Rules'
+                              : 'Ingestion Rules Engine'}
+                          </p>
                         </div>
                         <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100 border border-amber-200 dark:border-amber-800 shrink-0 ml-2">
                           Auto
-                        </span>
-                      </button>
-                    )}
-
-                    {/* Executive Report & Tax Statement */}
-                    {onOpenReportModal && (
-                      <button
-                        id="menu-open-report-modal"
-                        onClick={() => {
-                          setIsToolsOpen(false);
-                          onOpenReportModal();
-                        }}
-                        className="w-full px-2.5 py-2 rounded-lg hover:bg-[#F8F9FA] dark:hover:bg-[#112842] text-[#2D3748] dark:text-[#CBD5E1] hover:text-[#051C2C] dark:hover:text-white flex items-center justify-between transition-colors cursor-pointer group"
-                      >
-                        <div className="flex items-center space-x-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded-lg bg-[#F0F4F8] dark:bg-[#163354] text-[#2251FF] dark:text-[#60A5FA] flex items-center justify-center shrink-0 border border-[#E2E8F0] dark:border-[#2A486F]">
-                            <FileText className="w-3.5 h-3.5" />
-                          </div>
-                          <div className="text-left min-w-0">
-                            <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
-                              {language === 'id'
-                                ? 'Laporan & Rekap Pajak'
-                                : 'Financial Statement & Tax Report'}
-                            </p>
-                            <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                              {language === 'id'
-                                ? 'Klaim kantor & laporan siap cetak'
-                                : 'Printable statement & expense claims'}
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-[#F0F4F8] dark:bg-[#163354] text-[#051C2C] dark:text-[#F8FAFC] border border-[#E2E8F0] dark:border-[#2A486F] shrink-0 ml-2">
-                          PDF/CSV
                         </span>
                       </button>
                     )}
@@ -496,18 +448,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <div className="w-7 h-7 rounded-lg bg-[#F0F4F8] dark:bg-[#163354] text-[#2251FF] dark:text-[#60A5FA] flex items-center justify-center shrink-0 border border-[#E2E8F0] dark:border-[#2A486F]">
                           <Inbox className="w-3.5 h-3.5" />
                         </div>
-                        <div className="text-left min-w-0">
-                          <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
-                            {language === 'id'
-                              ? 'Log Email & AI Sandbox'
-                              : 'Email Ingestion Logs & Parser'}
-                          </p>
-                          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                            {language === 'id'
-                              ? 'Pantau log & uji coba struk'
-                              : 'Inspect scan logs & test parsing'}
-                          </p>
-                        </div>
+                        <p className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
+                          {language === 'id'
+                            ? 'Log Email & Parser'
+                            : 'Email Ingestion Logs & Parser'}
+                        </p>
                       </div>
                       <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-[#F8F9FA] dark:bg-[#112842] text-[#2D3748] dark:text-[#CBD5E1] border border-[#E2E8F0] dark:border-[#1E3A5F] shrink-0 ml-2">
                         Logs
@@ -534,18 +479,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                           >
                             <ShieldCheck className="w-3.5 h-3.5" />
                           </div>
-                          <div className="text-left min-w-0">
-                            <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
-                              {language === 'id'
-                                ? 'Verifikasi Domain & Antrean Review'
-                                : 'Sender Provenance & Queue'}
-                            </p>
-                            <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                              {language === 'id'
-                                ? 'Audit DKIM/SPF & proteksi homograf'
-                                : 'DKIM/SPF audit & homograph guard'}
-                            </p>
-                          </div>
+                          <p className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
+                            {language === 'id'
+                              ? 'Verifikasi Domain Pengirim'
+                              : 'Sender Provenance & Queue'}
+                          </p>
                         </div>
                         {pendingReviewCount > 0 ? (
                           <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-500 text-white shrink-0 ml-2 animate-pulse font-mono">
@@ -560,25 +498,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                     )}
 
                     {/* Auto-Sync Toggle Item */}
-                    <div className="px-2.5 py-2 rounded-lg bg-[#F8F9FA] dark:bg-[#112842] border border-[#E2E8F0] dark:border-[#1E3A5F] flex items-center justify-between my-1">
+                    <div className="px-2.5 py-2 rounded-lg bg-[#F8F9FA] dark:bg-[#112842] border border-[#E2E8F0] dark:border-[#1E3A5F] flex items-center justify-between my-0.5">
                       <div className="flex items-center space-x-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-[#F0F4F8] dark:bg-[#163354] text-[#2251FF] dark:text-[#60A5FA] flex items-center justify-center shrink-0 border border-[#E2E8F0] dark:border-[#2A486F]">
                           <Zap
                             className={`w-3.5 h-3.5 ${autoSyncEnabled ? 'text-[#2251FF] dark:text-[#60A5FA]' : 'text-slate-400'}`}
                           />
                         </div>
-                        <div className="text-left min-w-0">
-                          <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
-                            {language === 'id'
-                              ? 'Pemindaian Otomatis (45s)'
-                              : 'Autonomous Auto-Sync (45s)'}
-                          </p>
-                          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                            {language === 'id'
-                              ? 'Pindai berkala di latar belakang'
-                              : 'Background inbox monitoring'}
-                          </p>
-                        </div>
+                        <p className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
+                          {language === 'id'
+                            ? 'Pemindaian Otomatis (45s)'
+                            : 'Autonomous Auto-Sync (45s)'}
+                        </p>
                       </div>
                       <button
                         type="button"
@@ -594,14 +525,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </div>
                   </div>
 
-                  {/* GROUP 2: STANDARDS & CONFIGURATION */}
-                  <div className="pt-1.5 mt-1 border-t border-[#E2E8F0] dark:border-[#1E3A5F] space-y-0.5">
-                    <div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-                      {language === 'id'
-                        ? 'Standar & Preferensi'
-                        : 'Standards & Preferences'}
-                    </div>
-
+                  {/* STANDARDS & PREFERENCES */}
+                  <div className="pt-1.5 mt-1 border-t border-[#E2E8F0] dark:border-[#1E3A5F] space-y-1">
                     {/* Currency Modal */}
                     <button
                       onClick={() => {
@@ -614,18 +539,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <div className="w-7 h-7 rounded-lg bg-[#F0F4F8] dark:bg-[#163354] text-[#2251FF] dark:text-[#60A5FA] flex items-center justify-center shrink-0 border border-[#E2E8F0] dark:border-[#2A486F]">
                           <Coins className="w-3.5 h-3.5" />
                         </div>
-                        <div className="text-left min-w-0">
-                          <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
-                            {language === 'id'
-                              ? 'Mata Uang Standar'
-                              : 'Display Currency'}
-                          </p>
-                          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                            {language === 'id'
-                              ? 'Konversi kurs otomatis & multi-valas'
-                              : 'Auto FX rates & multi-currency'}
-                          </p>
-                        </div>
+                        <p className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
+                          {language === 'id'
+                            ? 'Mata Uang Standar'
+                            : 'Display Currency'}
+                        </p>
                       </div>
                       <span className="font-bold text-[#051C2C] dark:text-[#F8FAFC] font-mono text-[11px] bg-[#F8F9FA] dark:bg-[#163354] px-2 py-0.5 rounded border border-[#E2E8F0] dark:border-[#2A486F] shrink-0 ml-2">
                         {currentCurrency.flag} {currentCurrency.code}
@@ -646,18 +564,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <div className="w-7 h-7 rounded-lg bg-[#F0F4F8] dark:bg-[#163354] text-[#2251FF] dark:text-[#60A5FA] flex items-center justify-center shrink-0 border border-[#E2E8F0] dark:border-[#2A486F]">
                           <Globe className="w-3.5 h-3.5" />
                         </div>
-                        <div className="text-left min-w-0">
-                          <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
-                            {language === 'id'
-                              ? 'Bahasa Antarmuka'
-                              : 'System Language'}
-                          </p>
-                          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                            {language === 'id'
-                              ? 'Bahasa Indonesia & English'
-                              : 'Indonesian & English'}
-                          </p>
-                        </div>
+                        <p className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
+                          {language === 'id'
+                            ? 'Bahasa Antarmuka'
+                            : 'System Language'}
+                        </p>
                       </div>
                       <span className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-[11px] bg-[#F8F9FA] dark:bg-[#163354] px-2 py-0.5 rounded border border-[#E2E8F0] dark:border-[#2A486F] shrink-0 ml-2">
                         {language === 'id' ? '🇮🇩 ID' : '🇺🇸 EN'}
@@ -676,18 +587,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <div className="w-7 h-7 rounded-lg bg-[#F0F4F8] dark:bg-[#163354] text-[#2251FF] dark:text-[#60A5FA] flex items-center justify-center shrink-0 border border-[#E2E8F0] dark:border-[#2A486F]">
                           <Settings className="w-3.5 h-3.5" />
                         </div>
-                        <div className="text-left min-w-0">
-                          <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
-                            {language === 'id'
-                              ? 'Preferensi & Batas Anggaran'
-                              : 'Preferences & Budget Limits'}
-                          </p>
-                          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                            {language === 'id'
-                              ? 'Batas anomali, interval & data'
-                              : 'Anomaly limits, interval & data'}
-                          </p>
-                        </div>
+                        <p className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight truncate">
+                          {language === 'id'
+                            ? 'Preferensi & Batas Anggaran'
+                            : 'Preferences & Budget Limits'}
+                        </p>
                       </div>
                       <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-[#F8F9FA] dark:bg-[#163354] text-[#64748B] dark:text-[#94A3B8] border border-[#E2E8F0] dark:border-[#2A486F] shrink-0 ml-2">
                         Config
@@ -695,8 +599,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </button>
                   </div>
 
-                  {/* GROUP 3: DATA EXPORT & UTILITIES */}
-                  <div className="pt-2 mt-1 border-t border-white/10 flex items-center justify-between gap-2 px-1">
+                  {/* DATA EXPORT & UTILITIES */}
+                  <div className="pt-2 mt-1.5 border-t border-white/10 flex items-center justify-between gap-2 px-1">
                     {(onOpenReportModal || onExportCSV) && (
                       <button
                         onClick={() => {
@@ -782,21 +686,21 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* Single Unified Account Dropdown Panel */}
               {isUserMenuOpen && (
-                <div className="glass-dropdown absolute right-0 top-full mt-1.5 w-64 sm:w-72 max-w-[calc(100vw-1.5rem)] rounded-2xl p-2.5 z-50 animate-popover text-xs">
+                <div className="glass-dropdown absolute right-0 top-full mt-1.5 w-60 sm:w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl p-2 z-50 animate-popover text-xs shadow-2xl">
                   {user ? (
                     // Logged-in view
                     <>
                       <div className="p-2 border-b border-white/10 mb-1">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2.5 min-w-0">
                           {user.photoURL ? (
                             <img
                               src={user.photoURL}
                               alt={displayName}
-                              className="w-7 h-7 rounded-full ring-1 ring-[#2251FF]/30"
+                              className="w-7 h-7 rounded-full ring-1 ring-[#2251FF]/30 object-cover shrink-0"
                               referrerPolicy="no-referrer"
                             />
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-[#2251FF] text-white flex items-center justify-center font-bold text-xs">
+                            <div className="w-7 h-7 rounded-full bg-[#2251FF] text-white flex items-center justify-center font-bold text-xs shrink-0">
                               {displayInitial}
                             </div>
                           )}
@@ -804,14 +708,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                             <p className="text-xs font-bold text-[#051C2C] dark:text-[#F8FAFC] truncate">
                               {displayName}
                             </p>
-                            <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-mono truncate">
+                            <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] font-mono truncate">
                               {displayEmail}
                             </p>
                           </div>
                         </div>
                         {userProfile?.companyName && (
                           <div className="mt-1.5">
-                            <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#F0F4F8] dark:bg-[#163354] text-[#051C2C] dark:text-[#F8FAFC] border border-[#CBD5E1] dark:border-[#2A486F]">
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-[#F0F4F8] dark:bg-[#163354] text-[#051C2C] dark:text-[#F8FAFC] border border-[#CBD5E1] dark:border-[#2A486F] truncate max-w-full">
                               {userProfile.companyName}
                             </span>
                           </div>
@@ -823,21 +727,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                           setIsUserMenuOpen(false);
                           onOpenAccountModal();
                         }}
-                        className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[#F8F9FA] dark:hover:bg-[#112842] text-[#2D3748] dark:text-[#CBD5E1] hover:text-[#051C2C] dark:hover:text-white flex items-center space-x-2.5 transition-colors cursor-pointer"
+                        className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-[#F8F9FA] dark:hover:bg-[#112842] text-[#2D3748] dark:text-[#CBD5E1] hover:text-[#051C2C] dark:hover:text-white flex items-center space-x-2.5 transition-colors cursor-pointer"
                       >
-                        <UserIcon className="w-3.5 h-3.5 text-[#2251FF] dark:text-[#60A5FA]" />
-                        <div>
-                          <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs">
-                            {language === 'id'
-                              ? 'Profil & Aturan Akun'
-                              : 'Account Profile & Rules'}
-                          </p>
-                          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                            {language === 'id'
-                              ? 'Kelola nama, entitas & kontak'
-                              : 'Manage name, entity & contact'}
-                          </p>
-                        </div>
+                        <UserIcon className="w-4 h-4 text-[#2251FF] dark:text-[#60A5FA] shrink-0" />
+                        <span className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs truncate">
+                          {language === 'id'
+                            ? 'Profil & Aturan Akun'
+                            : 'Account Profile & Rules'}
+                        </span>
                       </button>
 
                       <button
@@ -845,50 +742,54 @@ export const Navbar: React.FC<NavbarProps> = ({
                           setIsUserMenuOpen(false);
                           onOpenCreateAccount();
                         }}
-                        className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[#F8F9FA] dark:hover:bg-[#112842] text-[#2D3748] dark:text-[#CBD5E1] hover:text-[#051C2C] dark:hover:text-white flex items-center space-x-2.5 transition-colors cursor-pointer"
+                        className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-[#F8F9FA] dark:hover:bg-[#112842] text-[#2D3748] dark:text-[#CBD5E1] hover:text-[#051C2C] dark:hover:text-white flex items-center space-x-2.5 transition-colors cursor-pointer"
                       >
-                        <UserPlus className="w-3.5 h-3.5 text-[#2251FF] dark:text-[#60A5FA]" />
-                        <div>
-                          <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs">
-                            {language === 'id'
-                              ? 'Daftar Akun Baru'
-                              : 'Register New Account'}
-                          </p>
-                          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                            {language === 'id'
-                              ? 'Buat profil perusahaan lain'
-                              : 'Create another company profile'}
-                          </p>
-                        </div>
+                        <UserPlus className="w-4 h-4 text-[#2251FF] dark:text-[#60A5FA] shrink-0" />
+                        <span className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs truncate">
+                          {language === 'id'
+                            ? 'Daftar Akun Baru'
+                            : 'Register New Account'}
+                        </span>
                       </button>
 
                       <div className="pt-1 mt-1 border-t border-[#E2E8F0] dark:border-[#1E3A5F]">
+                        {onOpenLandingPage && (
+                          <button
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              onOpenLandingPage();
+                            }}
+                            className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-[#F8F9FA] dark:hover:bg-[#112842] text-[#2D3748] dark:text-[#CBD5E1] hover:text-[#051C2C] dark:hover:text-white flex items-center space-x-2.5 transition-colors cursor-pointer mb-0.5"
+                          >
+                            <Globe className="w-4 h-4 text-[#2251FF] dark:text-[#60A5FA] shrink-0" />
+                            <span className="text-xs font-semibold">
+                              {language === 'id'
+                                ? 'Halaman Utama'
+                                : 'Landing Page'}
+                            </span>
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setIsUserMenuOpen(false);
                             onLogout();
                           }}
-                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[#D9383A] dark:text-rose-400 flex items-center space-x-2 transition-colors cursor-pointer font-semibold"
+                          className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[#D9383A] dark:text-rose-400 flex items-center space-x-2.5 transition-colors cursor-pointer font-semibold"
                         >
-                          <LogOut className="w-3.5 h-3.5" />
-                          <span>{t.menu.logout}</span>
+                          <LogOut className="w-4 h-4 shrink-0" />
+                          <span className="text-xs">{t.menu.logout}</span>
                         </button>
                       </div>
                     </>
                   ) : (
                     // Not logged-in view: Consolidated Actions
                     <>
-                      <div className="p-2 border-b border-[#E2E8F0] dark:border-[#1E3A5F] mb-1.5">
+                      <div className="px-2.5 py-2 border-b border-[#E2E8F0] dark:border-[#1E3A5F] mb-1">
                         <h4 className="font-bold text-[#051C2C] dark:text-[#F8FAFC] font-editorial text-xs">
                           {language === 'id'
                             ? 'Akses & Akun Pengguna'
                             : 'Account & Access'}
                         </h4>
-                        <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                          {language === 'id'
-                            ? 'Masuk atau daftarkan profil Anda'
-                            : 'Sign in or register your profile'}
-                        </p>
                       </div>
 
                       {/* Primary Option 1: Google Sign-In */}
@@ -898,9 +799,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                           setIsUserMenuOpen(false);
                           onLogin();
                         }}
-                        className="w-full px-2.5 py-2 rounded-lg bg-[#F8F9FA] dark:bg-[#112842] hover:bg-[#F0F4F8] dark:hover:bg-[#163354] border border-[#E2E8F0] dark:border-[#1E3A5F] hover:border-[#2251FF] text-[#2D3748] dark:text-[#E2E8F0] hover:text-[#051C2C] dark:hover:text-white flex items-center space-x-2.5 transition-colors cursor-pointer mb-1.5 group"
+                        className="w-full px-2.5 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#112842] hover:bg-[#F0F4F8] dark:hover:bg-[#163354] border border-[#E2E8F0] dark:border-[#1E3A5F] hover:border-[#2251FF] text-[#2D3748] dark:text-[#E2E8F0] hover:text-[#051C2C] dark:hover:text-white flex items-center space-x-2.5 transition-colors cursor-pointer mb-1 group"
                       >
-                        <div className="w-6 h-6 rounded-md bg-white dark:bg-[#081729] border border-[#E2E8F0] dark:border-[#1E3A5F] flex items-center justify-center shrink-0 shadow-2xs">
+                        <div className="w-5 h-5 rounded bg-white dark:bg-[#081729] border border-[#E2E8F0] dark:border-[#1E3A5F] flex items-center justify-center shrink-0 shadow-2xs">
                           <svg className="w-3.5 h-3.5" viewBox="0 0 48 48">
                             <path
                               fill="#EA4335"
@@ -920,16 +821,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                             />
                           </svg>
                         </div>
-                        <div className="text-left flex-1 min-w-0">
-                          <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight">
-                            {t.menu.loginWithGoogle}
-                          </p>
-                          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                            {language === 'id'
-                              ? 'Sinkronkan Gmail & bank'
-                              : 'Sync Gmail & feeds'}
-                          </p>
-                        </div>
+                        <span className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs truncate">
+                          {t.menu.loginWithGoogle}
+                        </span>
                       </button>
 
                       {/* Primary Option 2: Create Account Profile */}
@@ -939,23 +833,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                           setIsUserMenuOpen(false);
                           onOpenCreateAccount();
                         }}
-                        className="w-full px-2.5 py-2 rounded-lg hover:bg-[#F8F9FA] dark:hover:bg-[#112842] text-[#2D3748] dark:text-[#CBD5E1] hover:text-[#051C2C] dark:hover:text-white flex items-center space-x-2.5 transition-colors cursor-pointer"
+                        className="w-full px-2.5 py-2 rounded-xl hover:bg-[#F8F9FA] dark:hover:bg-[#112842] text-[#2D3748] dark:text-[#CBD5E1] hover:text-[#051C2C] dark:hover:text-white flex items-center space-x-2.5 transition-colors cursor-pointer"
                       >
-                        <div className="w-6 h-6 rounded-md bg-[#F0F4F8] dark:bg-[#163354] text-[#2251FF] dark:text-[#60A5FA] flex items-center justify-center shrink-0">
+                        <div className="w-5 h-5 rounded bg-[#F0F4F8] dark:bg-[#163354] text-[#2251FF] dark:text-[#60A5FA] flex items-center justify-center shrink-0">
                           <UserPlus className="w-3.5 h-3.5" />
                         </div>
-                        <div className="text-left flex-1 min-w-0">
-                          <p className="font-bold text-[#051C2C] dark:text-[#F8FAFC] text-xs leading-tight">
-                            {language === 'id'
-                              ? 'Daftar Akun Baru'
-                              : 'Create Account Profile'}
-                          </p>
-                          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                            {language === 'id'
-                              ? 'Atur identitas & standar'
-                              : 'Set identity & preferences'}
-                          </p>
-                        </div>
+                        <span className="font-semibold text-[#051C2C] dark:text-[#F8FAFC] text-xs truncate">
+                          {language === 'id'
+                            ? 'Daftar Akun Baru'
+                            : 'Create Account Profile'}
+                        </span>
                       </button>
                     </>
                   )}

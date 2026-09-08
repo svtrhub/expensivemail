@@ -279,25 +279,31 @@ export const AccountModal: React.FC<AccountModalProps> = ({
 
           {/* Linked Institutions */}
           <div className="space-y-1.5 mb-4 max-h-36 overflow-y-auto pr-1">
-            {accounts.map((acc) => (
-              <div
-                key={acc.id}
-                className="px-3 py-2 bg-[#F8F9FA] dark:bg-[#081827] rounded-lg border border-[#E2E8F0] dark:border-[#1E3A5F] flex items-center justify-between text-xs"
-              >
-                <div className="flex items-center space-x-2">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: acc.color }}
-                  />
-                  <span className="text-[#051C2C] dark:text-white font-semibold">
-                    {acc.name}
+            {accounts.length === 0 ? (
+              <div className="px-3 py-3 bg-[#F8F9FA] dark:bg-[#081827] rounded-lg border border-dashed border-[#E2E8F0] dark:border-[#1E3A5F] text-center text-xs text-[#64748B] dark:text-slate-400">
+                No bank accounts or digital wallets linked yet.
+              </div>
+            ) : (
+              accounts.map((acc) => (
+                <div
+                  key={acc.id}
+                  className="px-3 py-2 bg-[#F8F9FA] dark:bg-[#081827] rounded-lg border border-[#E2E8F0] dark:border-[#1E3A5F] flex items-center justify-between text-xs"
+                >
+                  <div className="flex items-center space-x-2">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: acc.color }}
+                    />
+                    <span className="text-[#051C2C] dark:text-white font-semibold">
+                      {acc.name}
+                    </span>
+                  </div>
+                  <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">
+                    {formatCurrency(acc.balance, currency)}
                   </span>
                 </div>
-                <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">
-                  {formatCurrency(acc.balance, currency)}
-                </span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* Action Controls */}

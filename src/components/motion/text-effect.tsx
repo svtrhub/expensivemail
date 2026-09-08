@@ -11,6 +11,7 @@ import {
   AnimatePresence,
 } from 'motion/react';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { getMotionComponent } from './motion-utils';
 
 export interface TextEffectProps {
   children: string;
@@ -36,7 +37,7 @@ const presetItemVariants: Record<string, Variants> = {
     visible: { opacity: 1 },
   },
   'fade-in-blur': {
-    hidden: { opacity: 0, filter: 'blur(8px)' },
+    hidden: { opacity: 0, filter: 'blur(4px)' },
     visible: { opacity: 1, filter: 'blur(0px)' },
   },
   slide: {
@@ -65,7 +66,7 @@ function splitText(text: string, per: 'word' | 'char' | 'line'): string[] {
 export const TextEffect: React.FC<TextEffectProps> = ({
   children,
   className,
-  as: Component = 'p',
+  as: Component = 'span',
   per = 'word',
   preset = 'fade-in-blur',
   delay = 0,
@@ -96,12 +97,13 @@ export const TextEffect: React.FC<TextEffectProps> = ({
     },
   };
 
-  const MotionComponent = motion.create(Component as any);
+  const MotionComponent = getMotionComponent(Component);
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {trigger && (
         <MotionComponent
+          key={children}
           initial="hidden"
           animate="visible"
           exit="hidden"

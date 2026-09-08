@@ -115,11 +115,16 @@ export function handleFirestoreError(
   }
 }
 
-const provider = new GoogleAuthProvider();
-// Workspace Gmail scope for reading transaction notices and receipts
-provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
-// Request offline/prompt if needed
-provider.setCustomParameters({
+// Standard Google Auth Provider (basic profile & email - never blocked by unverified app checks)
+const baseGoogleProvider = new GoogleAuthProvider();
+baseGoogleProvider.setCustomParameters({
+  prompt: 'select_account',
+});
+
+// Workspace Gmail Provider (includes gmail.readonly for automatic inbox parsing)
+const gmailGoogleProvider = new GoogleAuthProvider();
+gmailGoogleProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+gmailGoogleProvider.setCustomParameters({
   prompt: 'select_account',
 });
 
@@ -197,9 +202,151 @@ export const initAuth = (
   }
 };
 
-export const googleSignIn = async (): Promise<{
+export interface ParsedAuthError {
+  code: string;
+  messageEn: string;
+  messageId: string;
+  domain?: string;
+  actionableStepEn: string;
+  actionableStepId: string;
+  isDomainError: boolean;
+  isPopupBlocked: boolean;
+  isProviderDisabled: boolean;
+  isVerificationError?: boolean;
+}
+
+export function parseAuthError(error: any): ParsedAuthError {
+  const code = error?.code || '';
+  const rawMsg = error?.message || String(error || '');
+  const currentHost =
+    typeof window !== 'undefined' ? window.location.hostname : 'preview domain';
+
+  const activeProjectId =
+    (firebaseConfig as any)?.projectId || 'expensivemail-391e7';
+
+  // Check for Google OAuth verification / restricted scope blocks
+  if (
+    rawMsg.includes('verifikasi Google') ||
+    rawMsg.includes('verification') ||
+    rawMsg.includes('Akses diblokir') ||
+    rawMsg.includes('Access blocked') ||
+    rawMsg.includes('has not completed the Google verification process') ||
+    rawMsg.includes('access_denied') ||
+    code === 'auth/access-denied'
+  ) {
+    return {
+      code: 'auth/oauth-unverified-app',
+      messageEn: 'Google App Verification / Test User Required for Gmail Scope',
+      messageId:
+        'Verifikasi Aplikasi Google / Pengguna Uji Coba Diperlukan untuk Gmail',
+      domain: currentHost,
+      actionableStepEn: `Add your Google email to Google Cloud Console -> APIs & Services -> OAuth consent screen -> Test users for project '${activeProjectId}', or sign in with Standard mode.`,
+      actionableStepId: `Tambahkan email Google Anda ke Google Cloud Console -> APIs & Services -> Layar izin OAuth -> Pengguna uji coba pada project '${activeProjectId}', atau masuk dengan mode Standar.`,
+      isDomainError: false,
+      isPopupBlocked: false,
+      isProviderDisabled: false,
+      isVerificationError: true,
+    };
+  }
+
+  if (
+    code === 'auth/unauthorized-domain' ||
+    rawMsg.includes('unauthorized-domain') ||
+    rawMsg.includes('not authorized to run this operation')
+  ) {
+    return {
+      code: 'auth/unauthorized-domain',
+      messageEn: `Unauthorized Domain (${currentHost})`,
+      messageId: `Domain Belum Diizinkan (${currentHost})`,
+      domain: currentHost,
+      actionableStepEn: `Add '${currentHost}' to Firebase Console -> Authentication -> Settings -> Authorized Domains for project '${activeProjectId}'.`,
+      actionableStepId: `Tambahkan '${currentHost}' di Firebase Console -> Authentication -> Settings -> Authorized Domains pada project '${activeProjectId}'.`,
+      isDomainError: true,
+      isPopupBlocked: false,
+      isProviderDisabled: false,
+      isVerificationError: false,
+    };
+  }
+
+  if (code === 'auth/popup-blocked' || rawMsg.includes('popup-blocked')) {
+    return {
+      code: 'auth/popup-blocked',
+      messageEn: 'Popup Blocked by Browser or Iframe',
+      messageId: 'Popup Diblokir oleh Browser atau Iframe',
+      domain: currentHost,
+      actionableStepEn:
+        'Allow popups for this site or open the preview in a new browser tab.',
+      actionableStepId:
+        'Izinkan popup di browser Anda atau buka pratinjau ini di tab browser baru.',
+      isDomainError: false,
+      isPopupBlocked: true,
+      isProviderDisabled: false,
+      isVerificationError: false,
+    };
+  }
+
+  if (
+    code === 'auth/operation-not-allowed' ||
+    rawMsg.includes('operation-not-allowed')
+  ) {
+    return {
+      code: 'auth/operation-not-allowed',
+      messageEn: 'Google Sign-in Provider Not Enabled',
+      messageId: 'Metode Masuk Google Belum Diaktifkan',
+      domain: currentHost,
+      actionableStepEn:
+        "Enable 'Google' sign-in provider in Firebase Console -> Authentication -> Sign-in method.",
+      actionableStepId:
+        "Aktifkan provider 'Google' di Firebase Console -> Authentication -> Sign-in method.",
+      isDomainError: false,
+      isPopupBlocked: false,
+      isProviderDisabled: true,
+      isVerificationError: false,
+    };
+  }
+
+  if (
+    code === 'auth/popup-closed-by-user' ||
+    rawMsg.includes('popup-closed-by-user')
+  ) {
+    return {
+      code: 'auth/popup-closed-by-user',
+      messageEn: 'Sign-in window closed before completing authentication.',
+      messageId: 'Jendela login ditutup sebelum proses selesai.',
+      domain: currentHost,
+      actionableStepEn:
+        'Click the Google Sign-in button again to complete authentication.',
+      actionableStepId:
+        'Klik tombol Masuk dengan Google lagi untuk menyelesaikan proses.',
+      isDomainError: false,
+      isPopupBlocked: false,
+      isProviderDisabled: false,
+      isVerificationError: false,
+    };
+  }
+
+  return {
+    code: code || 'auth/unknown-error',
+    messageEn: rawMsg || 'Failed to authenticate with Google.',
+    messageId: rawMsg || 'Gagal melakukan autentikasi dengan akun Google.',
+    domain: currentHost,
+    actionableStepEn:
+      'Verify your internet connection or use Quick Demo Sign-in.',
+    actionableStepId:
+      'Periksa koneksi internet Anda atau gunakan Masuk Cepat Demo.',
+    isDomainError: false,
+    isPopupBlocked: false,
+    isProviderDisabled: false,
+    isVerificationError: false,
+  };
+}
+
+export const googleSignIn = async (
+  options: { includeGmailScope?: boolean } = {}
+): Promise<{
   user: User;
   accessToken: string;
+  hasGmailScope: boolean;
 } | null> => {
   if (!auth) {
     throw new Error(
@@ -208,18 +355,47 @@ export const googleSignIn = async (): Promise<{
   }
   try {
     isSigningIn = true;
-    const result = await signInWithPopup(auth, provider);
+    const providerToUse = options.includeGmailScope
+      ? gmailGoogleProvider
+      : baseGoogleProvider;
+
+    const result = await signInWithPopup(auth, providerToUse);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     const accessToken = credential?.accessToken || '';
 
-    persistTokenSafely(accessToken);
+    if (accessToken) {
+      persistTokenSafely(accessToken);
+    }
 
-    return { user: result.user, accessToken };
+    return {
+      user: result.user,
+      accessToken,
+      hasGmailScope: Boolean(options.includeGmailScope && accessToken),
+    };
   } catch (error: any) {
     console.error('Sign in error:', error);
     throw error;
   } finally {
     isSigningIn = false;
+  }
+};
+
+export const requestGmailPermission = async (): Promise<string | null> => {
+  if (!auth) {
+    throw new Error('Firebase Auth is not initialized.');
+  }
+  try {
+    const result = await signInWithPopup(auth, gmailGoogleProvider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    const accessToken = credential?.accessToken || '';
+    if (accessToken) {
+      persistTokenSafely(accessToken);
+      return accessToken;
+    }
+    return null;
+  } catch (error) {
+    console.error('Request Gmail Permission error:', error);
+    throw error;
   }
 };
 

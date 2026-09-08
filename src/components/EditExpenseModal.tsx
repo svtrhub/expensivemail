@@ -47,6 +47,7 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
   const [bankAccountId, setBankAccountId] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [notes, setNotes] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     if (expense) {
@@ -60,6 +61,7 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
       setBankAccountId(expense.bankAccountId || '');
       setIsRecurring(expense.isRecurring);
       setNotes(expense.notes || '');
+      setErrorMsg('');
     }
   }, [expense, defaultCurrency]);
 
@@ -68,9 +70,24 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) return;
+    if (isNaN(numAmount) || numAmount <= 0) {
+      setErrorMsg(
+        language === 'id'
+          ? 'Silakan masukkan jumlah nominal yang valid (lebih dari 0).'
+          : 'Please enter a valid amount greater than 0.'
+      );
+      return;
+    }
 
     const matchedAccount = accounts.find((a) => a.id === bankAccountId);
+    const updatedBankAccountId = bankAccountId
+      ? matchedAccount?.id || bankAccountId
+      : undefined;
+    const updatedBankAccountName = matchedAccount
+      ? `${matchedAccount.name} (${matchedAccount.accountNumberMask})`
+      : bankAccountId
+        ? expense.bankAccountName
+        : undefined;
 
     onSave({
       ...expense,
@@ -79,10 +96,8 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
       currency: selectedCurrency,
       category,
       date,
-      bankAccountId: matchedAccount?.id || expense.bankAccountId,
-      bankAccountName: matchedAccount
-        ? `${matchedAccount.name} (${matchedAccount.accountNumberMask})`
-        : expense.bankAccountName,
+      bankAccountId: updatedBankAccountId,
+      bankAccountName: updatedBankAccountName,
       isRecurring,
       notes: notes.trim(),
       verifiedByUser: true,
@@ -121,7 +136,7 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-4 space-y-3.5">
+          <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-3.5">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-[#051C2C] dark:text-slate-200 block mb-1">
@@ -148,14 +163,15 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
                     onChange={(e) =>
                       setSelectedCurrency(e.target.value as SupportedCurrency)
                     }
-                    className="px-2 py-2 bg-[#F8F9FA] dark:bg-[#0A1C30] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs font-bold text-[#2251FF] dark:text-[#38BDF8] focus:outline-none focus:ring-1 focus:ring-[#2251FF] shrink-0"
+                    style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+                    className="px-2 py-2 bg-[#071524] border border-white/20 rounded-lg text-xs font-bold text-[#38BDF8] focus:outline-none focus:ring-1 focus:ring-[#38BDF8] shrink-0 [&>option]:bg-[#071524] [&>option]:text-white"
                   >
                     {(Object.keys(CURRENCIES) as SupportedCurrency[]).map(
                       (code) => (
                         <option
                           key={code}
                           value={code}
-                          className="dark:bg-[#0D2238] dark:text-white"
+                          className="bg-[#071524] text-white"
                         >
                           {CURRENCIES[code].symbol} {code}
                         </option>
@@ -163,25 +179,31 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
                     )}
                   </select>
                   <input
+                    id="edit-expense-amount-input"
                     type="number"
-                    step={
-                      selectedCurrency === 'IDR' || selectedCurrency === 'JPY'
-                        ? '1'
-                        : '0.01'
-                    }
-                    min="0.01"
+                    step="any"
+                    min="0"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      if (errorMsg) setErrorMsg('');
+                    }}
                     required
-                    className="w-full px-3 py-2 bg-[#F8F9FA] dark:bg-[#0A1C30] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs font-mono font-bold text-[#051C2C] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#2251FF]"
+                    placeholder="0"
+                    className="w-full px-3 py-2 bg-[#071524] border border-white/20 rounded-lg text-xs font-mono font-bold text-white focus:outline-none focus:ring-1 focus:ring-[#38BDF8]"
                   />
                 </div>
+                {errorMsg && (
+                  <p className="text-[11px] text-rose-400 mt-1 font-medium">
+                    {errorMsg}
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-[#051C2C] dark:text-slate-200 block mb-1">
+                <label className="text-xs font-bold text-slate-200 block mb-1">
                   {t.modals.categoryLabel}:
                 </label>
                 <select
@@ -189,13 +211,14 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
                   onChange={(e) =>
                     setCategory(e.target.value as ExpenseCategory)
                   }
-                  className="w-full px-3 py-2 bg-[#F8F9FA] dark:bg-[#0A1C30] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs text-[#051C2C] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#2251FF]"
+                  style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+                  className="w-full px-3 py-2 bg-[#071524] border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#38BDF8] [&>option]:bg-[#071524] [&>option]:text-white"
                 >
                   {CATEGORIES.map((cat) => (
                     <option
                       key={cat}
                       value={cat}
-                      className="dark:bg-[#0D2238] dark:text-white"
+                      className="bg-[#071524] text-white"
                     >
                       {t.categories[cat] || cat}
                     </option>
@@ -204,28 +227,30 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[#051C2C] dark:text-slate-200 block mb-1">
+                <label className="text-xs font-bold text-slate-200 block mb-1">
                   {t.modals.dateLabel}:
                 </label>
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#F8F9FA] dark:bg-[#0A1C30] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs text-[#051C2C] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#2251FF]"
+                  style={{ colorScheme: 'dark' }}
+                  className="w-full px-3 py-2 bg-[#071524] border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#38BDF8]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-[#051C2C] dark:text-slate-200 block mb-1">
+              <label className="text-xs font-bold text-slate-200 block mb-1">
                 {t.modals.bankAccountLabel}:
               </label>
               <select
                 value={bankAccountId}
                 onChange={(e) => setBankAccountId(e.target.value)}
-                className="w-full px-3 py-2 bg-[#F8F9FA] dark:bg-[#0A1C30] border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg text-xs text-[#051C2C] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#2251FF]"
+                style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+                className="w-full px-3 py-2 bg-[#071524] border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#38BDF8] [&>option]:bg-[#071524] [&>option]:text-white"
               >
-                <option value="" className="dark:bg-[#0D2238] dark:text-white">
+                <option value="" className="bg-[#071524] text-white">
                   {language === 'id'
                     ? '(Tanpa Rekening Terhubung)'
                     : '(No Linked Account)'}
@@ -234,7 +259,7 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
                   <option
                     key={acc.id}
                     value={acc.id}
-                    className="dark:bg-[#0D2238] dark:text-white"
+                    className="bg-[#071524] text-white"
                   >
                     {acc.name} ({acc.accountNumberMask})
                   </option>

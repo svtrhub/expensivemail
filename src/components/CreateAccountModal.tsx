@@ -112,6 +112,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
   currentLanguage,
   onOpenLogin,
 }) => {
+  const isID = currentLanguage === 'id';
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Form State
@@ -134,11 +135,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
     selectedCurrency === 'IDR' ? 10000000 : 2000
   );
 
-  const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>([
-    'bca',
-    'mandiri',
-    'gopay',
-  ]);
+  const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>(
+    []
+  );
   const [syncCadence, setSyncCadence] = useState<
     'realtime' | 'hourly' | 'daily'
   >('realtime');
@@ -152,11 +151,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
   const toggleInstitution = (id: string) => {
     if (selectedInstitutions.includes(id)) {
-      if (selectedInstitutions.length > 1) {
-        setSelectedInstitutions(
-          selectedInstitutions.filter((item) => item !== id)
-        );
-      }
+      setSelectedInstitutions(
+        selectedInstitutions.filter((item) => item !== id)
+      );
     } else {
       setSelectedInstitutions([...selectedInstitutions, id]);
     }
@@ -166,23 +163,32 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
     const errs: Record<string, string> = {};
 
     if (currentStep === 1) {
-      if (!fullName.trim()) errs.fullName = 'Full name is required';
-      if (!email.trim() || !email.includes('@'))
-        errs.email = 'Valid email is required for inbox parsing';
-      if (password && password.length < 6)
-        errs.password = 'Password must be at least 6 characters';
+      if (!fullName.trim()) {
+        errs.fullName = isID
+          ? 'Nama lengkap wajib diisi'
+          : 'Full name is required';
+      }
+      if (!email.trim() || !email.includes('@')) {
+        errs.email = isID
+          ? 'Email valid diperlukan untuk pembacaan struk'
+          : 'Valid email is required for inbox parsing';
+      }
+      if (password && password.length < 6) {
+        errs.password = isID
+          ? 'Kata sandi minimal 6 karakter'
+          : 'Password must be at least 6 characters';
+      }
     } else if (currentStep === 2) {
       if (!companyName.trim() && entityType !== 'personal') {
-        errs.companyName = 'Organization/Company name is required';
+        errs.companyName = isID
+          ? 'Nama perusahaan/organisasi wajib diisi'
+          : 'Organization/Company name is required';
       }
     } else if (currentStep === 3) {
       if (monthlyBudgetGoal <= 0) {
-        errs.monthlyBudgetGoal = 'Please specify a monthly budget goal';
-      }
-    } else if (currentStep === 4) {
-      if (selectedInstitutions.length === 0) {
-        errs.selectedInstitutions =
-          'Select at least one banking or wallet feed';
+        errs.monthlyBudgetGoal = isID
+          ? 'Tentukan target anggaran bulanan'
+          : 'Please specify a monthly budget goal';
       }
     }
 
@@ -237,17 +243,19 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
           <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
             <div className="min-w-0">
               <h3 className="text-lg sm:text-xl font-bold text-[#051C2C] dark:text-white tracking-tight font-editorial truncate">
-                Create Account
+                {isID ? 'Daftar Akun Baru' : 'Create Account'}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-slate-400 truncate">
-                Set up your profile, bank accounts & receipt parsing rules
+                {isID
+                  ? 'Atur profil, akun bank & aturan pemindaian struk'
+                  : 'Set up your profile, bank accounts & receipt parsing rules'}
               </p>
             </div>
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-slate-400 hover:text-[#051C2C] dark:hover:text-white hover:bg-[#F0F4F8] dark:hover:bg-[#163354] transition-colors cursor-pointer shrink-0 ml-3"
-              title="Close"
-              aria-label="Close dialog"
+              title={isID ? 'Tutup' : 'Close'}
+              aria-label={isID ? 'Tutup dialog' : 'Close dialog'}
             >
               <X className="w-5 h-5" />
             </button>
@@ -257,8 +265,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
           <div className="mb-6">
             <div className="grid grid-cols-4 gap-2 text-center text-xs">
               <button
+                type="button"
                 onClick={() => step > 1 && setStep(1)}
-                className={`pb-2 border-b-2 font-bold transition-colors text-left sm:text-center ${
+                className={`pb-2 border-b-2 font-bold transition-colors text-left sm:text-center min-w-0 ${
                   step === 1
                     ? 'border-[#2251FF] text-[#2251FF] dark:text-[#38BDF8]'
                     : step > 1
@@ -266,15 +275,18 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       : 'border-slate-200 dark:border-[#1E3A5F] text-slate-400 dark:text-slate-500'
                 }`}
               >
-                <span className="block text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Step 1
+                <span className="block text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
+                  {isID ? 'Langkah 1' : 'Step 1'}
                 </span>
-                <span className="text-xs truncate">1. Identity</span>
+                <span className="text-xs truncate block">
+                  {isID ? '1. Identitas' : '1. Identity'}
+                </span>
               </button>
 
               <button
+                type="button"
                 onClick={() => step > 2 && setStep(2)}
-                className={`pb-2 border-b-2 font-bold transition-colors text-left sm:text-center ${
+                className={`pb-2 border-b-2 font-bold transition-colors text-left sm:text-center min-w-0 ${
                   step === 2
                     ? 'border-[#2251FF] text-[#2251FF] dark:text-[#38BDF8]'
                     : step > 2
@@ -282,15 +294,18 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       : 'border-slate-200 dark:border-[#1E3A5F] text-slate-400 dark:text-slate-500'
                 }`}
               >
-                <span className="block text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Step 2
+                <span className="block text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
+                  {isID ? 'Langkah 2' : 'Step 2'}
                 </span>
-                <span className="text-xs truncate">2. Entity & Role</span>
+                <span className="text-xs truncate block">
+                  {isID ? '2. Entitas & Peran' : '2. Entity & Role'}
+                </span>
               </button>
 
               <button
+                type="button"
                 onClick={() => step > 3 && setStep(3)}
-                className={`pb-2 border-b-2 font-bold transition-colors text-left sm:text-center ${
+                className={`pb-2 border-b-2 font-bold transition-colors text-left sm:text-center min-w-0 ${
                   step === 3
                     ? 'border-[#2251FF] text-[#2251FF] dark:text-[#38BDF8]'
                     : step > 3
@@ -298,24 +313,29 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       : 'border-slate-200 dark:border-[#1E3A5F] text-slate-400 dark:text-slate-500'
                 }`}
               >
-                <span className="block text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Step 3
+                <span className="block text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
+                  {isID ? 'Langkah 3' : 'Step 3'}
                 </span>
-                <span className="text-xs truncate">3. Standards</span>
+                <span className="text-xs truncate block">
+                  {isID ? '3. Anggaran' : '3. Standards'}
+                </span>
               </button>
 
               <button
+                type="button"
                 onClick={() => step > 4 && setStep(4)}
-                className={`pb-2 border-b-2 font-bold transition-colors text-left sm:text-center ${
+                className={`pb-2 border-b-2 font-bold transition-colors text-left sm:text-center min-w-0 ${
                   step === 4
                     ? 'border-[#2251FF] text-[#2251FF] dark:text-[#38BDF8]'
                     : 'border-slate-200 dark:border-[#1E3A5F] text-slate-400 dark:text-slate-500'
                 }`}
               >
-                <span className="block text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Step 4
+                <span className="block text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
+                  {isID ? 'Langkah 4' : 'Step 4'}
                 </span>
-                <span className="text-xs truncate">4. Bank Feeds</span>
+                <span className="text-xs truncate block">
+                  {isID ? '4. Bank & Dompet' : '4. Bank Feeds'}
+                </span>
               </button>
             </div>
           </div>
@@ -327,16 +347,18 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
               <div className="space-y-4 animate-in fade-in-50 duration-150">
                 <div className="p-3 bg-[#F8F9FA] dark:bg-[#081827] rounded-xl border border-[#E2E8F0] dark:border-[#1E3A5F] text-xs text-[#64748B] dark:text-slate-300 flex items-start space-x-2.5">
                   <Sparkles className="w-4 h-4 text-[#2251FF] dark:text-[#38BDF8] shrink-0 mt-0.5" />
-                  <p>
-                    Your profile details configure automated mailbox matching,
-                    receipt parser routing, and personalized daily briefings.
+                  <p className="leading-relaxed">
+                    {isID
+                      ? 'Profil Anda mengatur pencocokan kotak masuk otomatis, rute pemindaian struk, dan ringkasan keuangan harian.'
+                      : 'Your profile details configure automated mailbox matching, receipt parser routing, and personalized daily briefings.'}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-1">
-                      Full Name <span className="text-rose-500">*</span>
+                      {isID ? 'Nama Lengkap' : 'Full Name'}{' '}
+                      <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -344,7 +366,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="e.g. Budi Santoso"
+                        placeholder={
+                          isID ? 'cth. Budi Santoso' : 'e.g. Alex Johnson'
+                        }
                         className="w-full pl-9 pr-3 py-2 text-xs border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2251FF] bg-white dark:bg-[#081827] text-[#051C2C] dark:text-white font-medium"
                         required
                       />
@@ -358,7 +382,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-1">
-                      Ingestion Email Address{' '}
+                      {isID
+                        ? 'Alamat Email Ingesti'
+                        : 'Ingestion Email Address'}{' '}
                       <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
@@ -381,7 +407,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-1">
-                      Security Passcode / Password
+                      {isID
+                        ? 'Kata Sandi / PIN Keamanan'
+                        : 'Security Passcode / Password'}
                     </label>
                     <div className="relative">
                       <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -394,7 +422,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       />
                     </div>
                     <span className="text-[10px] text-[#64748B] dark:text-slate-400">
-                      For ledger encryption & export access
+                      {isID
+                        ? 'Untuk enkripsi buku kas & akses ekspor'
+                        : 'For ledger encryption & export access'}
                     </span>
                     {errors.password && (
                       <p className="text-[11px] text-rose-600 mt-0.5">
@@ -405,7 +435,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-1">
-                      Phone / WhatsApp (Alerts)
+                      {isID
+                        ? 'No. Telepon / WhatsApp (Notifikasi)'
+                        : 'Phone / WhatsApp (Alerts)'}
                     </label>
                     <div className="relative">
                       <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -418,7 +450,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       />
                     </div>
                     <span className="text-[10px] text-[#64748B] dark:text-slate-400">
-                      For instantaneous high-value spend notices
+                      {isID
+                        ? 'Untuk notifikasi instan transaksi besar'
+                        : 'For instantaneous high-value spend notices'}
                     </span>
                   </div>
                 </div>
@@ -430,46 +464,56 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
               <div className="space-y-4 animate-in fade-in-50 duration-150">
                 <div>
                   <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-2">
-                    Financial Entity Scope{' '}
+                    {isID
+                      ? 'Cakupan Entitas Keuangan'
+                      : 'Financial Entity Scope'}{' '}
                     <span className="text-rose-500">*</span>
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {[
                       {
                         id: 'corporate',
-                        label: 'Corporate Exec',
-                        desc: 'Enterprise & C-Suite',
+                        label: isID ? 'Eksekutif Korporat' : 'Corporate Exec',
+                        desc: isID
+                          ? 'Perusahaan & C-Suite'
+                          : 'Enterprise & C-Suite',
                       },
                       {
                         id: 'business',
-                        label: 'SME / Startup',
-                        desc: 'Commercial Operations',
+                        label: isID ? 'UKM / Bisnis' : 'SME / Startup',
+                        desc: isID
+                          ? 'Operasional Bisnis'
+                          : 'Commercial Operations',
                       },
                       {
                         id: 'freelance',
-                        label: 'Professional',
-                        desc: 'Consultant / Agency',
+                        label: isID ? 'Profesional' : 'Professional',
+                        desc: isID
+                          ? 'Konsultan / Agensi'
+                          : 'Consultant / Agency',
                       },
                       {
                         id: 'personal',
-                        label: 'Personal Wealth',
-                        desc: 'Family & Private Office',
+                        label: isID ? 'Keuangan Pribadi' : 'Personal Wealth',
+                        desc: isID
+                          ? 'Keluarga & Pribadi'
+                          : 'Family & Private Office',
                       },
                     ].map((item) => (
                       <button
                         type="button"
                         key={item.id}
                         onClick={() => setEntityType(item.id as EntityType)}
-                        className={`p-3 rounded-xl border text-left transition-colors cursor-pointer ${
+                        className={`p-3 rounded-xl border text-left transition-colors cursor-pointer min-w-0 ${
                           entityType === item.id
                             ? 'border-[#2251FF] bg-[#F0F4F8] dark:bg-[#163354] ring-2 ring-[#2251FF]/20'
                             : 'border-[#E2E8F0] dark:border-[#1E3A5F] bg-white dark:bg-[#081827] hover:border-[#CBD5E1]'
                         }`}
                       >
-                        <span className="font-bold text-xs text-[#051C2C] dark:text-white block">
+                        <span className="font-bold text-xs text-[#051C2C] dark:text-white block truncate">
                           {item.label}
                         </span>
-                        <span className="text-[10px] text-[#64748B] dark:text-slate-400 block mt-0.5">
+                        <span className="text-[10px] text-[#64748B] dark:text-slate-400 block mt-0.5 truncate">
                           {item.desc}
                         </span>
                       </button>
@@ -480,7 +524,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
                   <div>
                     <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-1">
-                      Company / Organization Name
+                      {isID
+                        ? 'Nama Perusahaan / Organisasi'
+                        : 'Company / Organization Name'}
                     </label>
                     <div className="relative">
                       <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -488,7 +534,11 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                         type="text"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="e.g. Enterprise Group, Tech Corp"
+                        placeholder={
+                          isID
+                            ? 'cth. PT Maju Bersama'
+                            : 'e.g. Enterprise Group, Tech Corp'
+                        }
                         className="w-full pl-9 pr-3 py-2 text-xs border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2251FF] bg-white dark:bg-[#081827] text-[#051C2C] dark:text-white"
                       />
                     </div>
@@ -501,7 +551,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-1">
-                      Job Title / Role
+                      {isID ? 'Jabatan / Posisi' : 'Job Title / Role'}
                     </label>
                     <div className="relative">
                       <Briefcase className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -509,7 +559,11 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                         type="text"
                         value={jobTitle}
                         onChange={(e) => setJobTitle(e.target.value)}
-                        placeholder="e.g. Managing Director, CFO, Lead"
+                        placeholder={
+                          isID
+                            ? 'cth. Managing Director, CFO, Lead'
+                            : 'e.g. Managing Director, CFO, Lead'
+                        }
                         className="w-full pl-9 pr-3 py-2 text-xs border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2251FF] bg-white dark:bg-[#081827] text-[#051C2C] dark:text-white"
                       />
                     </div>
@@ -525,7 +579,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                   {/* Base Currency */}
                   <div>
                     <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-1">
-                      Primary Base Currency{' '}
+                      {isID ? 'Mata Uang Utama' : 'Primary Base Currency'}{' '}
                       <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
@@ -546,7 +600,11 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                             setLargeTxThreshold(150);
                           }
                         }}
-                        className="w-full pl-9 pr-3 py-2 text-xs border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2251FF] bg-white dark:bg-[#081827] text-[#051C2C] dark:text-white font-semibold cursor-pointer"
+                        style={{
+                          colorScheme: 'dark',
+                          backgroundColor: '#071524',
+                        }}
+                        className="w-full pl-9 pr-3 py-2 text-xs border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38BDF8] bg-[#071524] text-white font-semibold cursor-pointer [&>option]:bg-[#071524] [&>option]:text-white"
                       >
                         {(Object.keys(CURRENCIES) as SupportedCurrency[]).map(
                           (code) => {
@@ -555,7 +613,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                               <option
                                 key={code}
                                 value={code}
-                                className="dark:bg-[#0D2238] dark:text-white"
+                                className="bg-[#071524] text-white"
                               >
                                 {c.flag} {c.code} ({c.symbol}) - {c.name}
                               </option>
@@ -568,8 +626,10 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
                   {/* Primary Language */}
                   <div>
-                    <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-1">
-                      Display Language Standard{' '}
+                    <label className="block text-xs font-bold text-slate-200 mb-1">
+                      {isID
+                        ? 'Bahasa Tampilan Standar'
+                        : 'Display Language Standard'}{' '}
                       <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
@@ -579,18 +639,16 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                         onChange={(e) =>
                           setSelectedLanguage(e.target.value as LanguageCode)
                         }
-                        className="w-full pl-9 pr-3 py-2 text-xs border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2251FF] bg-white dark:bg-[#081827] text-[#051C2C] dark:text-white font-semibold cursor-pointer"
+                        style={{
+                          colorScheme: 'dark',
+                          backgroundColor: '#071524',
+                        }}
+                        className="w-full pl-9 pr-3 py-2 text-xs border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38BDF8] bg-[#071524] text-white font-semibold cursor-pointer [&>option]:bg-[#071524] [&>option]:text-white"
                       >
-                        <option
-                          value="id"
-                          className="dark:bg-[#0D2238] dark:text-white"
-                        >
+                        <option value="id" className="bg-[#071524] text-white">
                           🇮🇩 Bahasa Indonesia (ID)
                         </option>
-                        <option
-                          value="en"
-                          className="dark:bg-[#0D2238] dark:text-white"
-                        >
+                        <option value="en" className="bg-[#071524] text-white">
                           🇺🇸 English (US)
                         </option>
                       </select>
@@ -603,7 +661,11 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-bold text-[#051C2C] dark:text-white flex items-center space-x-1.5">
                       <Target className="w-4 h-4 text-[#2251FF] dark:text-[#38BDF8]" />
-                      <span>Monthly Spending Target Benchmark</span>
+                      <span>
+                        {isID
+                          ? 'Target Batas Pengeluaran Bulanan'
+                          : 'Monthly Spending Target Benchmark'}
+                      </span>
                     </label>
                     <span className="font-mono font-bold text-xs text-[#2251FF] dark:text-[#38BDF8]">
                       {formatCurrency(monthlyBudgetGoal, selectedCurrency)}
@@ -617,11 +679,12 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                     }
                     className="w-full px-3 py-2 text-xs border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg bg-white dark:bg-[#0D2238] font-mono font-bold text-[#051C2C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2251FF]"
                     min="0"
-                    step={selectedCurrency === 'IDR' ? '500000' : '50'}
+                    step="any"
                   />
                   <p className="text-[10px] text-[#64748B] dark:text-slate-400 mt-1">
-                    Used by Gemini AI to calculate daily burn rates, safety
-                    thresholds, and monthly budget pacing.
+                    {isID
+                      ? 'Digunakan oleh AI untuk menghitung laju harian, batas pengeluaran aman, dan peringatan budget.'
+                      : 'Used by Gemini AI to calculate daily burn rates, safety thresholds, and monthly budget pacing.'}
                   </p>
                   {errors.monthlyBudgetGoal && (
                     <p className="text-[11px] text-rose-600 mt-1">
@@ -638,11 +701,15 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-xs font-bold text-[#051C2C] dark:text-slate-200">
-                      Connect Primary Banking & Wallet Feeds{' '}
+                      {isID
+                        ? 'Hubungkan Rekening Bank & Dompet Digital'
+                        : 'Connect Primary Banking & Wallet Feeds'}{' '}
                       <span className="text-rose-500">*</span>
                     </label>
                     <span className="text-[11px] text-[#2251FF] dark:text-[#38BDF8] font-semibold">
-                      {selectedInstitutions.length} feeds selected
+                      {isID
+                        ? `${selectedInstitutions.length} rekening dipilih`
+                        : `${selectedInstitutions.length} feeds selected`}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
@@ -688,38 +755,47 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                 {/* Ingestion Cadence & Sensitivity */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
-                    <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-1">
-                      Inbox Scan Cadence
+                    <label className="block text-xs font-bold text-slate-200 mb-1">
+                      {isID
+                        ? 'Frekuensi Pemindaian Email'
+                        : 'Inbox Scan Cadence'}
                     </label>
                     <select
                       value={syncCadence}
                       onChange={(e) => setSyncCadence(e.target.value as any)}
-                      className="w-full px-3 py-1.5 text-xs border border-[#CBD5E1] dark:border-[#1E3A5F] rounded-lg bg-white dark:bg-[#081827] text-[#051C2C] dark:text-white font-medium cursor-pointer"
+                      style={{
+                        colorScheme: 'dark',
+                        backgroundColor: '#071524',
+                      }}
+                      className="w-full px-3 py-1.5 text-xs border border-white/20 rounded-lg bg-[#071524] text-white font-medium cursor-pointer [&>option]:bg-[#071524] [&>option]:text-white"
                     >
                       <option
                         value="realtime"
-                        className="dark:bg-[#0D2238] dark:text-white"
+                        className="bg-[#071524] text-white"
                       >
-                        Continuous Real-Time (45s)
+                        {isID
+                          ? 'Real-Time Berkelanjutan (45d)'
+                          : 'Continuous Real-Time (45s)'}
                       </option>
                       <option
                         value="hourly"
-                        className="dark:bg-[#0D2238] dark:text-white"
+                        className="bg-[#071524] text-white"
                       >
-                        Hourly Batch Scan
+                        {isID
+                          ? 'Pemindaian Berkala Per Jam'
+                          : 'Hourly Batch Scan'}
                       </option>
-                      <option
-                        value="daily"
-                        className="dark:bg-[#0D2238] dark:text-white"
-                      >
-                        Daily Summary
+                      <option value="daily" className="bg-[#071524] text-white">
+                        {isID ? 'Rekap Harian' : 'Daily Summary'}
                       </option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-[#051C2C] dark:text-slate-200 mb-1">
-                      Large Spend Alert Threshold
+                      {isID
+                        ? 'Batas Peringatan Transaksi Besar'
+                        : 'Large Spend Alert Threshold'}
                     </label>
                     <div className="flex items-center space-x-2">
                       <input
@@ -738,9 +814,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                 <div className="p-3 bg-[#F8F9FA] dark:bg-[#081827] rounded-xl border border-[#E2E8F0] dark:border-[#1E3A5F] text-[11px] text-[#64748B] dark:text-slate-300 flex items-start space-x-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <p>
-                    By creating an account, your data is securely stored and
-                    parsed locally in your session, ready for real-time inbox
-                    synchronization.
+                    {isID
+                      ? 'Dengan mendaftar akun, data Anda disimpan dengan aman dan diproses langsung di sesi Anda, siap untuk sinkronisasi email real-time.'
+                      : 'By creating an account, your data is securely stored and parsed locally in your session, ready for real-time inbox synchronization.'}
                   </p>
                 </div>
               </div>
@@ -756,7 +832,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                     className="px-3.5 py-2 rounded-lg border border-[#CBD5E1] dark:border-[#1E3A5F] hover:bg-[#F8F9FA] dark:hover:bg-[#163354] text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center space-x-1 transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    <span>Back</span>
+                    <span>{isID ? 'Kembali' : 'Back'}</span>
                   </button>
                 ) : (
                   <button
@@ -767,7 +843,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                     }}
                     className="text-xs text-[#2251FF] dark:text-[#38BDF8] hover:underline font-semibold cursor-pointer"
                   >
-                    Already have an account? Sign In
+                    {isID
+                      ? 'Sudah punya akun? Masuk'
+                      : 'Already have an account? Sign In'}
                   </button>
                 )}
               </div>
@@ -778,7 +856,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                   onClick={onClose}
                   className="px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-[#112842] hover:bg-slate-200 dark:hover:bg-[#163354] text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {isID ? 'Batal' : 'Cancel'}
                 </button>
 
                 {step < 4 ? (
@@ -787,7 +865,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                     onClick={handleNext}
                     className="px-4 py-2 rounded-lg bg-[#2251FF] hover:bg-[#1267D5] text-white font-bold text-xs flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
                   >
-                    <span>Continue</span>
+                    <span>{isID ? 'Lanjutkan' : 'Continue'}</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 ) : (
@@ -797,7 +875,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                     className="px-5 py-2 rounded-lg bg-[#2251FF] hover:bg-[#1267D5] text-white font-bold text-xs flex items-center space-x-1.5 transition-colors shadow-md cursor-pointer"
                   >
                     <CheckCircle2 className="w-4 h-4 text-white" />
-                    <span>Create Account</span>
+                    <span>{isID ? 'Daftar Akun' : 'Create Account'}</span>
                   </button>
                 )}
               </div>

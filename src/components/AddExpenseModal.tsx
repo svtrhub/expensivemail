@@ -326,7 +326,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
             >
               {CATEGORIES.map((cat) => (
-                <option key={cat.name} value={cat.name}>
+                <option
+                  key={cat.name}
+                  value={cat.name}
+                  className="bg-[#071524] text-slate-100 py-1.5"
+                >
                   {cat.name}
                 </option>
               ))}
@@ -360,7 +364,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               onChange={(e) => setBankAccountId(e.target.value)}
             >
               {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
+                <option
+                  key={acc.id}
+                  value={acc.id}
+                  className="bg-[#071524] text-slate-100 py-1.5"
+                >
                   {acc.name} ({acc.accountNumberMask}) - {acc.institution}
                 </option>
               ))}

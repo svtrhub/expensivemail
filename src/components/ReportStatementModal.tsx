@@ -451,28 +451,28 @@ export const ReportStatementModal: React.FC<ReportStatementModalProps> = ({
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value as any)}
-                style={{ colorScheme: 'dark' }}
-                className="w-full px-2.5 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:border-[#2251FF]"
+                style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+                className="w-full px-2.5 py-1.5 bg-[#071524] border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:border-[#38BDF8] [&>option]:bg-[#071524] [&>option]:text-white"
               >
-                <option value="this_month" className="bg-[#051C2C] text-white">
+                <option value="this_month" className="bg-[#071524] text-white">
                   Bulan Ini (Aug 2026)
                 </option>
-                <option value="last_month" className="bg-[#051C2C] text-white">
+                <option value="last_month" className="bg-[#071524] text-white">
                   Bulan Lalu
                 </option>
                 <option
                   value="last_30_days"
-                  className="bg-[#051C2C] text-white"
+                  className="bg-[#071524] text-white"
                 >
                   30 Hari Terakhir
                 </option>
                 <option
                   value="year_to_date"
-                  className="bg-[#051C2C] text-white"
+                  className="bg-[#071524] text-white"
                 >
                   Year-to-Date (YTD 2026)
                 </option>
-                <option value="all" className="bg-[#051C2C] text-white">
+                <option value="all" className="bg-[#071524] text-white">
                   Semua Transaksi Tersimpan
                 </option>
               </select>
@@ -485,21 +485,21 @@ export const ReportStatementModal: React.FC<ReportStatementModalProps> = ({
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as any)}
-                style={{ colorScheme: 'dark' }}
-                className="w-full px-2.5 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:border-[#2251FF]"
+                style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+                className="w-full px-2.5 py-1.5 bg-[#071524] border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:border-[#38BDF8] [&>option]:bg-[#071524] [&>option]:text-white"
               >
-                <option value="all" className="bg-[#051C2C] text-white">
+                <option value="all" className="bg-[#071524] text-white">
                   Semua Pengeluaran (Personal & Bisnis)
                 </option>
                 <option
                   value="business_only"
-                  className="bg-[#051C2C] text-white"
+                  className="bg-[#071524] text-white"
                 >
                   Klaim Bisnis / Reimbursable Saja
                 </option>
                 <option
                   value="tax_deductible_only"
-                  className="bg-[#051C2C] text-white"
+                  className="bg-[#071524] text-white"
                 >
                   Pengurang Pajak (Tax Deductible) Saja
                 </option>
@@ -513,17 +513,17 @@ export const ReportStatementModal: React.FC<ReportStatementModalProps> = ({
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                style={{ colorScheme: 'dark' }}
-                className="w-full px-2.5 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:border-[#2251FF]"
+                style={{ colorScheme: 'dark', backgroundColor: '#071524' }}
+                className="w-full px-2.5 py-1.5 bg-[#071524] border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:border-[#38BDF8] [&>option]:bg-[#071524] [&>option]:text-white"
               >
-                <option value="ALL" className="bg-[#051C2C] text-white">
+                <option value="ALL" className="bg-[#071524] text-white">
                   Semua Kategori (MECE)
                 </option>
                 {Object.keys(t.categories).map((cat) => (
                   <option
                     key={cat}
                     value={cat}
-                    className="bg-[#051C2C] text-white"
+                    className="bg-[#071524] text-white"
                   >
                     {t.categories[cat as ExpenseCategory] || cat}
                   </option>

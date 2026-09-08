@@ -11,6 +11,7 @@ import {
   AnimatePresence,
 } from 'motion/react';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { getMotionComponent } from './motion-utils';
 
 export interface AnimatedGroupProps {
   children: React.ReactNode;
@@ -23,6 +24,14 @@ export interface AnimatedGroupProps {
   };
   /** Max number of items to stagger (performance cap) */
   staggerCap?: number;
+  /** Trigger animation when scrolled into viewport (default: false, triggers on mount) */
+  inView?: boolean;
+  /** Viewport settings if inView is enabled */
+  viewport?: {
+    once?: boolean;
+    amount?: 'some' | 'all' | number;
+    margin?: string;
+  };
 }
 
 const presetVariants: Record<string, { container: Variants; item: Variants }> =
@@ -104,9 +113,11 @@ export const AnimatedGroup: React.FC<AnimatedGroupProps> = ({
   preset = 'slide',
   variants,
   staggerCap = 10,
+  inView = false,
+  viewport = { once: true, amount: 0.12, margin: '0px 0px -30px 0px' },
 }) => {
   const prefersReducedMotion = useReducedMotion();
-  const MotionComponent = motion.create(Component as any);
+  const MotionComponent = getMotionComponent(Component);
   const resolvedVariants =
     variants || presetVariants[preset] || presetVariants.slide;
 
@@ -120,7 +131,9 @@ export const AnimatedGroup: React.FC<AnimatedGroupProps> = ({
   return (
     <MotionComponent
       initial="hidden"
-      animate="visible"
+      {...(inView
+        ? { whileInView: 'visible', viewport }
+        : { animate: 'visible' })}
       variants={resolvedVariants.container}
       className={className}
     >

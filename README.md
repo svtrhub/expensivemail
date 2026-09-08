@@ -2,7 +2,7 @@
 
 # ExpensiveMail
 
-Modern Al-powered email receipt parser and expense ledger.
+Automatic email receipt parser and expense ledger.
 
 [![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](#version-history)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license)
@@ -102,8 +102,8 @@ Open `http://localhost:3000` in your browser and connect your Google Gemini API 
 
 ExpensiveMail runs on modern browsers:
 
-| Browser | Minimum Version | Status |
-| :------ | :-------------- | :----- |
+| Browser | Minimum Version | Status    |
+| :------ | :-------------- | :-------- |
 | Chrome  | 90+             | Supported |
 | Firefox | 88+             | Supported |
 | Safari  | 14+             | Supported |
@@ -140,12 +140,12 @@ ExpensiveMail runs on modern browsers:
 
 ExpensiveMail supports English (`en`) and Bahasa Indonesia (`id`).
 
-| Component | English (`en`) | Bahasa Indonesia (`id`) | Coverage |
-| :-------- | :------------- | :---------------------- | :------- |
-| Dashboard | Full English labels | Label Bahasa Indonesia | 100% UI strings |
-| Modals | 13 localized dialogs | 13 dialog tersaji lengkap | 100% Modals |
-| Toasts | Real-time system feedback | Notifikasi sistem | All alert toasts |
-| Exports | PDF, CSV, and JSON exports | Ekspor PDF, CSV, dan JSON | All reports |
+| Component | English (`en`)             | Bahasa Indonesia (`id`)   | Coverage         |
+| :-------- | :------------------------- | :------------------------ | :--------------- |
+| Dashboard | Full English labels        | Label Bahasa Indonesia    | 100% UI strings  |
+| Modals    | 13 localized dialogs       | 13 dialog tersaji lengkap | 100% Modals      |
+| Toasts    | Real-time system feedback  | Notifikasi sistem         | All alert toasts |
+| Exports   | PDF, CSV, and JSON exports | Ekspor PDF, CSV, dan JSON | All reports      |
 
 Languages can be switched at any time from the navigation bar or language modal. The setting is saved automatically.
 
@@ -155,14 +155,14 @@ Languages can be switched at any time from the navigation bar or language modal.
 
 The app handles real-time conversion and reporting across 6 currencies:
 
-| Currency | Code | Symbol | Format |
-| :------- | :--- | :----: | :----- |
-| Indonesian Rupiah | `IDR` | `Rp` | Integer (`Rp 150.000`) |
-| US Dollar | `USD` | `$` | Two decimals (`$124.50`) |
-| Euro | `EUR` | `€` | Standard notation (`€95.00`) |
-| British Pound | `GBP` | `£` | Standard notation (`£82.00`) |
-| Singapore Dollar | `SGD` | `S$` | Standard notation (`S$140.00`) |
-| Japanese Yen | `JPY` | `¥` | Integer (`¥15,000`) |
+| Currency          | Code  | Symbol | Format                         |
+| :---------------- | :---- | :----: | :----------------------------- |
+| Indonesian Rupiah | `IDR` |  `Rp`  | Integer (`Rp 150.000`)         |
+| US Dollar         | `USD` |  `$`   | Two decimals (`$124.50`)       |
+| Euro              | `EUR` |  `€`   | Standard notation (`€95.00`)   |
+| British Pound     | `GBP` |  `£`   | Standard notation (`£82.00`)   |
+| Singapore Dollar  | `SGD` |  `S$`  | Standard notation (`S$140.00`) |
+| Japanese Yen      | `JPY` |  `¥`   | Integer (`¥15,000`)            |
 
 Changing the display currency recalculates monthly totals, daily averages, and budget limits without reloading the page.
 
@@ -199,16 +199,16 @@ Changing the display currency recalculates monthly totals, daily averages, and b
 +-------------------------------------------------------------------------------+
 ```
 
-| Layer | Technology | Role |
-| :---- | :---------- | :--- |
-| Frontend | React 19, TypeScript 5.8, Tailwind CSS v4 | Responsive web interface |
-| Localization | Custom i18n service | Dual language dictionary (EN and ID) |
-| Currency | `exchangeRateDb` service | Exchange rate conversion matrix |
-| Animations | Motion (`motion/react`) | Number counters and modal transitions |
-| Backend | Node.js, Express, Esbuild | Server API router (`dist/server.cjs`) |
-| AI Model | `@google/genai` | Email receipt parsing with regex fallback |
-| Storage & Auth | Firebase Auth & Firestore | User authentication and data persistence |
-| Testing | Playwright Chromium | End-to-end testing and visual verification |
+| Layer          | Technology                                | Role                                       |
+| :------------- | :---------------------------------------- | :----------------------------------------- |
+| Frontend       | React 19, TypeScript 5.8, Tailwind CSS v4 | Responsive web interface                   |
+| Localization   | Custom i18n service                       | Dual language dictionary (EN and ID)       |
+| Currency       | `exchangeRateDb` service                  | Exchange rate conversion matrix            |
+| Animations     | Motion (`motion/react`)                   | Number counters and modal transitions      |
+| Backend        | Node.js, Express, Esbuild                 | Server API router (`dist/server.cjs`)      |
+| AI Model       | `@google/genai`                           | Email receipt parsing with regex fallback  |
+| Storage & Auth | Firebase Auth & Firestore                 | User authentication and data persistence   |
+| Testing        | Playwright Chromium                       | End-to-end testing and visual verification |
 
 ---
 
@@ -307,16 +307,16 @@ ExpensiveMail uses a dark optical glass design system tuned for contrast and cla
 
 Measured from production builds (`vite build`), TypeScript checks (`tsc --noEmit`), and Playwright test runs:
 
-| Metric | Value | Baseline / Context |
-| :----- | :----- | :------------------ |
-| Main JS Bundle Size | 308.42 kB | Down from 538.82 kB (42.7% reduction via code-splitting) |
-| Modal Async Chunks | 15 lazy modules | Modules load on demand (3.88 kB to 25.77 kB per modal) |
-| Build Execution Time | 5.39 seconds | 2,394 modules transformed, 0 TypeScript errors |
-| Parsing Speed | < 350 ms per email | 98% extraction confidence score |
-| Bank Feeds Supported | 18+ institutions | Templates for BCA, Mandiri, BNI, BRI, BSI, BTN, Jenius, CIMB, Jago, GoPay, OVO, ShopeePay, DANA, LinkAja, GrabPay, Stripe, PayPal, Wise |
-| Languages | 2 locales (EN, ID) | 100% dictionary string coverage |
-| Currencies | 6 ISO currencies | Real-time conversion across IDR, USD, EUR, GBP, SGD, JPY |
-| E2E Test Pass Rate | 100% pass | 0 console errors or uncaught exceptions |
+| Metric               | Value              | Baseline / Context                                                                                                                      |
+| :------------------- | :----------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| Main JS Bundle Size  | 308.42 kB          | Down from 538.82 kB (42.7% reduction via code-splitting)                                                                                |
+| Modal Async Chunks   | 15 lazy modules    | Modules load on demand (3.88 kB to 25.77 kB per modal)                                                                                  |
+| Build Execution Time | 5.39 seconds       | 2,394 modules transformed, 0 TypeScript errors                                                                                          |
+| Parsing Speed        | < 350 ms per email | 98% extraction confidence score                                                                                                         |
+| Bank Feeds Supported | 18+ institutions   | Templates for BCA, Mandiri, BNI, BRI, BSI, BTN, Jenius, CIMB, Jago, GoPay, OVO, ShopeePay, DANA, LinkAja, GrabPay, Stripe, PayPal, Wise |
+| Languages            | 2 locales (EN, ID) | 100% dictionary string coverage                                                                                                         |
+| Currencies           | 6 ISO currencies   | Real-time conversion across IDR, USD, EUR, GBP, SGD, JPY                                                                                |
+| E2E Test Pass Rate   | 100% pass          | 0 console errors or uncaught exceptions                                                                                                 |
 
 ---
 
@@ -414,6 +414,7 @@ Pull requests are welcome. To contribute:
 5. Push and open a Pull Request
 
 Ensure the following before submitting:
+
 - TypeScript type checks pass (`npm run typecheck`)
 - Production build succeeds (`npm run build`)
 - Code follows the existing style (Prettier is configured)

@@ -12,6 +12,8 @@ import {
   googleSignIn,
   logout,
   getAccessToken,
+  parseAuthError,
+  ParsedAuthError,
 } from './services/firebaseAuth';
 import { fetchInboxExpenseEmails } from './services/gmailApi';
 import {
@@ -22,6 +24,7 @@ import {
 import {
   SupportedCurrency,
   formatCurrency,
+  convertCurrency,
   CURRENCIES,
   DEFAULT_EXCHANGE_RATE_DB,
   fetchLiveExchangeRates,
@@ -147,6 +150,11 @@ const SetBudgetModal = lazy(() =>
     default: m.SetBudgetModal,
   }))
 );
+const AuthTroubleshootingModal = lazy(() =>
+  import('./components/AuthTroubleshootingModal').then((m) => ({
+    default: m.AuthTroubleshootingModal,
+  }))
+);
 import {
   DEFAULT_INGESTION_RULES,
   applyIngestionRules,
@@ -212,6 +220,8 @@ const DEFAULT_BUDGETS_IDR: BudgetCategory[] = [
   },
   { category: 'Health & Wellness', monthlyLimit: 800000, color: '#FB7185' },
   { category: 'Financial & Fees', monthlyLimit: 200000, color: '#94A3B8' },
+  { category: 'Housing & Rent', monthlyLimit: 5000000, color: '#818CF8' },
+  { category: 'Other', monthlyLimit: 1000000, color: '#A78BFA' },
 ];
 
 export default function App() {
@@ -256,6 +266,8 @@ export default function App() {
   const [isLandingPage, setIsLandingPage] = useState<boolean>(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [authError, setAuthError] = useState<ParsedAuthError | null>(null);
+  const [isAuthTroubleshootOpen, setIsAuthTroubleshootOpen] = useState(false);
 
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     try {
@@ -289,18 +301,20 @@ export default function App() {
     };
   });
 
-  // Financial Data state (with safe localStorage persistence)
+  // Financial Data state (Clean slate by default for authenticated users)
   const [accounts, setAccounts] = useState<BankAccount[]>(() => {
     try {
       const saved = localStorage.getItem('app_bank_accounts');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
     } catch (e) {
       console.warn('Could not parse saved bank accounts:', e);
     }
-    return INITIAL_BANK_ACCOUNTS;
+    return [];
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
@@ -308,12 +322,21 @@ export default function App() {
       const saved = localStorage.getItem('app_expenses');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // If contains legacy hardcoded demo expenses, purge and return empty
+          const hasMockExp = parsed.some(
+            (e) =>
+              e.id === 'exp_bca_starbucks' ||
+              e.id === 'exp_bni_pln' ||
+              e.id === 'exp_mandiri_tokopedia'
+          );
+          if (!hasMockExp) return parsed;
+        }
       }
     } catch (e) {
       console.warn('Could not parse saved expenses:', e);
     }
-    return INITIAL_EXPENSES;
+    return [];
   });
 
   const [budgets, setBudgets] = useState<BudgetCategory[]>(() => {
@@ -321,19 +344,12 @@ export default function App() {
       const saved = localStorage.getItem('app_budgets');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       console.warn('Could not parse saved budgets:', e);
     }
-    return [
-      { category: 'Dining & Food', monthlyLimit: 3000000 },
-      { category: 'Groceries', monthlyLimit: 4000000 },
-      { category: 'Shopping & Retail', monthlyLimit: 2500000 },
-      { category: 'Utilities & Bills', monthlyLimit: 2000000 },
-      { category: 'Travel & Transportation', monthlyLimit: 2000000 },
-      { category: 'Entertainment & Subscriptions', monthlyLimit: 1500000 },
-    ];
+    return DEFAULT_BUDGETS_IDR;
   });
 
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>(() => {
@@ -360,13 +376,31 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<
     'dashboard' | 'analytics' | 'budgets'
   >('dashboard');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] =
+    useState<string>('ALL');
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
     null
   );
   const [isSyncing, setIsSyncing] = useState(false);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
   const [autoSyncIntervalSec, setAutoSyncIntervalSec] = useState(45);
-  const [lastSynced, setLastSynced] = useState<Date | null>(new Date());
+  const [lastSyncTimestamp, setLastSyncTimestamp] = useState<string | null>(
+    () => {
+      try {
+        return localStorage.getItem('expensivemail_last_sync_timestamp');
+      } catch {
+        return null;
+      }
+    }
+  );
+  const [lastSynced, setLastSynced] = useState<Date | null>(() => {
+    try {
+      const saved = localStorage.getItem('expensivemail_last_sync_timestamp');
+      return saved ? new Date(saved) : new Date();
+    } catch {
+      return new Date();
+    }
+  });
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
   const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -748,20 +782,28 @@ export default function App() {
   };
 
   useEffect(() => {
-    localStorage.setItem('app_bank_accounts', JSON.stringify(accounts));
-  }, [accounts]);
+    if (!isDemoMode || user) {
+      localStorage.setItem('app_bank_accounts', JSON.stringify(accounts));
+    }
+  }, [accounts, isDemoMode, user]);
 
   useEffect(() => {
-    localStorage.setItem('app_expenses', JSON.stringify(expenses));
-  }, [expenses]);
+    if (!isDemoMode || user) {
+      localStorage.setItem('app_expenses', JSON.stringify(expenses));
+    }
+  }, [expenses, isDemoMode, user]);
 
   useEffect(() => {
-    localStorage.setItem('app_budgets', JSON.stringify(budgets));
-  }, [budgets]);
+    if (!isDemoMode || user) {
+      localStorage.setItem('app_budgets', JSON.stringify(budgets));
+    }
+  }, [budgets, isDemoMode, user]);
 
   useEffect(() => {
-    localStorage.setItem('app_sync_logs', JSON.stringify(syncLogs));
-  }, [syncLogs]);
+    if (!isDemoMode || user) {
+      localStorage.setItem('app_sync_logs', JSON.stringify(syncLogs));
+    }
+  }, [syncLogs, isDemoMode, user]);
 
   useEffect(() => {
     localStorage.setItem('app_ingestion_rules', JSON.stringify(ingestionRules));
@@ -810,113 +852,122 @@ export default function App() {
       setBudgets(adjustedBudgets);
     }
 
-    // Add bank accounts based on selected institutions if not already present
-    let newAccountsList: BankAccount[] = accounts;
-    if (selectedBanks && selectedBanks.length > 0) {
-      const bankMap: Record<string, Omit<BankAccount, 'id'>> = {
-        bca: {
-          name: 'Bank Central Asia (BCA)',
-          institution: 'BCA',
-          accountNumberMask: '•••• 8821',
-          type: 'checking',
-          balance: newProfile.defaultCurrency === 'IDR' ? 14250000 : 950,
-          currency: newProfile.defaultCurrency,
-          color: '#00529C',
-          iconName: 'Building2',
-          active: true,
-        },
-        mandiri: {
-          name: 'Bank Mandiri',
-          institution: 'Mandiri',
-          accountNumberMask: '•••• 1904',
-          type: 'checking',
-          balance: newProfile.defaultCurrency === 'IDR' ? 8600000 : 580,
-          currency: newProfile.defaultCurrency,
-          color: '#003876',
-          iconName: 'Building2',
-          active: true,
-        },
-        jenius: {
-          name: 'Jenius / BTPN',
-          institution: 'Jenius',
-          accountNumberMask: '•••• 3310',
-          type: 'checking',
-          balance: newProfile.defaultCurrency === 'IDR' ? 4500000 : 300,
-          currency: newProfile.defaultCurrency,
-          color: '#00A4E4',
-          iconName: 'Zap',
-          active: true,
-        },
-        bni: {
-          name: 'Bank Negara Indonesia (BNI)',
-          institution: 'BNI',
-          accountNumberMask: '•••• 5520',
-          type: 'checking',
-          balance: newProfile.defaultCurrency === 'IDR' ? 6200000 : 410,
-          currency: newProfile.defaultCurrency,
-          color: '#005E5D',
-          iconName: 'Building2',
-          active: true,
-        },
-        gopay: {
-          name: 'GoPay / GoTo Financial',
-          institution: 'GoPay',
-          accountNumberMask: '•••• 0812',
-          type: 'digital_wallet',
-          balance: newProfile.defaultCurrency === 'IDR' ? 850000 : 60,
-          currency: newProfile.defaultCurrency,
-          color: '#00AA13',
-          iconName: 'Zap',
-          active: true,
-        },
-        shopeepay: {
-          name: 'ShopeePay',
-          institution: 'ShopeePay',
-          accountNumberMask: '•••• 9940',
-          type: 'digital_wallet',
-          balance: newProfile.defaultCurrency === 'IDR' ? 420000 : 30,
-          currency: newProfile.defaultCurrency,
-          color: '#EE4D2D',
-          iconName: 'Zap',
-          active: true,
-        },
-        ovo: {
-          name: 'OVO Digital Wallet',
-          institution: 'OVO',
-          accountNumberMask: '•••• 6401',
-          type: 'digital_wallet',
-          balance: newProfile.defaultCurrency === 'IDR' ? 310000 : 25,
-          currency: newProfile.defaultCurrency,
-          color: '#4C3494',
-          iconName: 'Zap',
-          active: true,
-        },
-        amex: {
-          name: 'Corporate Platinum Card',
-          institution: 'Amex',
-          accountNumberMask: '•••• 9002',
-          type: 'credit',
-          balance: newProfile.defaultCurrency === 'IDR' ? 3450000 : 240,
-          currency: newProfile.defaultCurrency,
-          color: '#001A3D',
-          iconName: 'CreditCard',
-          active: true,
-        },
-      };
+    // Generate actual BankAccount records from user's selected banks in the onboarding wizard
+    const BANK_TEMPLATES: Record<string, Omit<BankAccount, 'id'>> = {
+      bca: {
+        name: 'myBCA',
+        institution: 'Bank Central Asia (BCA)',
+        accountNumberMask: '•••• 8821',
+        type: 'checking',
+        balance: 0,
+        currency: newProfile.defaultCurrency as SupportedCurrency,
+        color: '#005EB8',
+        iconName: 'Smartphone',
+        active: true,
+      },
+      mandiri: {
+        name: "Livin' by Mandiri",
+        institution: 'Bank Mandiri',
+        accountNumberMask: '•••• 4519',
+        type: 'checking',
+        balance: 0,
+        currency: newProfile.defaultCurrency as SupportedCurrency,
+        color: '#0A3B7B',
+        iconName: 'Smartphone',
+        active: true,
+      },
+      bni: {
+        name: 'wondr by BNI',
+        institution: 'Bank Negara Indonesia (BNI)',
+        accountNumberMask: '•••• 3810',
+        type: 'checking',
+        balance: 0,
+        currency: newProfile.defaultCurrency as SupportedCurrency,
+        color: '#F15A24',
+        iconName: 'Smartphone',
+        active: true,
+      },
+      bri: {
+        name: 'BRImo',
+        institution: 'Bank Rakyat Indonesia (BRI)',
+        accountNumberMask: '•••• 1928',
+        type: 'checking',
+        balance: 0,
+        currency: newProfile.defaultCurrency as SupportedCurrency,
+        color: '#00529C',
+        iconName: 'Smartphone',
+        active: true,
+      },
+      jenius: {
+        name: 'Jenius m-Card',
+        institution: 'Bank BTPN (Jenius)',
+        accountNumberMask: '•••• 5521',
+        type: 'checking',
+        balance: 0,
+        currency: newProfile.defaultCurrency as SupportedCurrency,
+        color: '#00A4E4',
+        iconName: 'CreditCard',
+        active: true,
+      },
+      gopay: {
+        name: 'GoPay Wallet',
+        institution: 'GoPay Indonesia',
+        accountNumberMask: '•••• 7712',
+        type: 'digital_wallet',
+        balance: 0,
+        currency: newProfile.defaultCurrency as SupportedCurrency,
+        color: '#00AA13',
+        iconName: 'Wallet',
+        active: true,
+      },
+      shopeepay: {
+        name: 'ShopeePay',
+        institution: 'Shopee Indonesia',
+        accountNumberMask: '•••• 6124',
+        type: 'digital_wallet',
+        balance: 0,
+        currency: newProfile.defaultCurrency as SupportedCurrency,
+        color: '#EE4D2D',
+        iconName: 'Wallet',
+        active: true,
+      },
+      ovo: {
+        name: 'OVO Cash',
+        institution: 'OVO (PT Visionet)',
+        accountNumberMask: '•••• 9011',
+        type: 'digital_wallet',
+        balance: 0,
+        currency: newProfile.defaultCurrency as SupportedCurrency,
+        color: '#4C2A86',
+        iconName: 'Wallet',
+        active: true,
+      },
+    };
 
-      const mapped = selectedBanks
-        .map((bankId) => {
-          const tpl = bankMap[bankId];
+    let newAccountsList: BankAccount[] = [...accounts];
+    if (selectedBanks && selectedBanks.length > 0) {
+      const generated: BankAccount[] = selectedBanks
+        .map((key) => {
+          const tpl = BANK_TEMPLATES[key.toLowerCase()];
           if (!tpl) return null;
+          if (
+            newAccountsList.some((a) =>
+              a.institution
+                .toLowerCase()
+                .includes(tpl.institution.toLowerCase())
+            )
+          ) {
+            return null;
+          }
           return {
-            id: `acc_${bankId}_${Date.now()}`,
             ...tpl,
+            id: `acc_${key.toLowerCase()}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           };
         })
         .filter(Boolean) as BankAccount[];
 
-      if (mapped.length > 0) {
-        newAccountsList = mapped;
+      if (generated.length > 0) {
+        newAccountsList = [...newAccountsList, ...generated];
         setAccounts(newAccountsList);
       }
     }
@@ -980,26 +1031,24 @@ export default function App() {
             if (!isMounted) return;
             if (cloudData && cloudData.profile) {
               setUserProfile(cloudData.profile);
-              if (cloudData.accounts && cloudData.accounts.length > 0)
-                setAccounts(cloudData.accounts);
-              if (cloudData.expenses && cloudData.expenses.length > 0)
-                setExpenses(cloudData.expenses);
-              if (cloudData.budgets && cloudData.budgets.length > 0)
-                setBudgets(cloudData.budgets);
-              if (cloudData.syncLogs && cloudData.syncLogs.length > 0)
-                setSyncLogs(cloudData.syncLogs);
-              if (
-                cloudData.ingestionRules &&
-                cloudData.ingestionRules.length > 0
-              ) {
-                setIngestionRules(cloudData.ingestionRules);
+              if (cloudData.profile.lastSyncTimestamp) {
+                setLastSyncTimestamp(cloudData.profile.lastSyncTimestamp);
+                setLastSynced(new Date(cloudData.profile.lastSyncTimestamp));
+                try {
+                  localStorage.setItem(
+                    'expensivemail_last_sync_timestamp',
+                    cloudData.profile.lastSyncTimestamp
+                  );
+                } catch (e) {
+                  console.warn('Storage save last sync error:', e);
+                }
               }
-              if (
-                cloudData.userTrustedRules &&
-                cloudData.userTrustedRules.length > 0
-              ) {
-                setUserTrustedRules(cloudData.userTrustedRules);
-              }
+              setAccounts(cloudData.accounts || []);
+              setExpenses(cloudData.expenses || []);
+              setBudgets(cloudData.budgets || []);
+              setSyncLogs(cloudData.syncLogs || []);
+              setIngestionRules(cloudData.ingestionRules || []);
+              setUserTrustedRules(cloudData.userTrustedRules || []);
               if (cloudData.profile.defaultLanguage) {
                 setLanguage(cloudData.profile.defaultLanguage as LanguageCode);
               }
@@ -1029,7 +1078,7 @@ export default function App() {
                 return true;
               }).catch((e) => console.warn('[Outbox Auto-flush Notice]', e));
             } else {
-              // First time signing in with Google - bootstrap profile and initial records into Firestore
+              // First time signing in with Google - bootstrap clean zeroed profile and initial records into Firestore
               const newProf: UserProfile = {
                 id: authedUser.uid,
                 fullName:
@@ -1054,22 +1103,25 @@ export default function App() {
                 updatedAt: new Date().toISOString(),
               };
               setUserProfile(newProf);
+              setAccounts([]);
+              setExpenses([]);
+              setBudgets([]);
+              setSyncLogs([]);
+              setIngestionRules([]);
               await saveInitialUserDataToFirestore(
                 authedUser.uid,
                 newProf,
-                accounts,
-                expenses,
-                budgets,
-                syncLogs,
-                ingestionRules
+                [],
+                [],
+                [],
+                [],
+                []
               );
             }
           } catch (e) {
             console.warn('Background cloud sync notice:', e);
           }
         } else {
-          setIsLandingPage(true);
-          setIsDemoMode(false);
           setIsAuthReady(true);
         }
       },
@@ -1077,8 +1129,6 @@ export default function App() {
         if (!isMounted) return;
         setUser(null);
         setAccessToken(null);
-        setIsLandingPage(true);
-        setIsDemoMode(false);
         setIsAuthReady(true);
       }
     );
@@ -1115,6 +1165,13 @@ export default function App() {
     setDismissedAnomalyIds((prev) => {
       const next = new Set(prev);
       next.add(expenseId);
+      const exp = expenses.find((e) => e.id === expenseId);
+      if (exp?.emailId) {
+        next.add(exp.emailId);
+      }
+      if (expenseId.startsWith('exp_mail_')) {
+        next.add(expenseId.replace(/^exp_mail_/, ''));
+      }
       return next;
     });
     showToast(
@@ -1311,7 +1368,7 @@ export default function App() {
         senderDomain: rule.domain,
         dateReceived: item.date,
         snippet: item.snippet || '',
-        authDetails: item.authDetails,
+        ...(item.authDetails ? { authDetails: item.authDetails } : {}),
       },
       tags: ['trusted_sender', rule.domain.split('.')[0]],
     };
@@ -1481,7 +1538,7 @@ export default function App() {
           senderDomain: rule.domain,
           dateReceived: item.date,
           snippet: item.snippet || '',
-          authDetails: item.authDetails,
+          ...(item.authDetails ? { authDetails: item.authDetails } : {}),
         },
         tags: ['trusted_sender', rule.domain.split('.')[0]],
       };
@@ -1625,35 +1682,64 @@ export default function App() {
     }, 120);
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (
+    options?: { includeGmail?: boolean } | React.MouseEvent | unknown
+  ) => {
     setIsAuthenticating(true);
+    setAuthError(null);
+    setIsDemoMode(false);
+    // Immediately isolate from demo data
+    setAccounts([]);
+    setExpenses([]);
+    setBudgets([]);
+    setSyncLogs([]);
+    const includeGmail =
+      options && typeof options === 'object' && 'includeGmail' in options
+        ? ((options as { includeGmail?: boolean }).includeGmail ?? true)
+        : true;
     try {
-      const res = await googleSignIn();
+      const res = await googleSignIn({ includeGmailScope: includeGmail });
       if (res) {
         setUser(res.user);
-        setAccessToken(res.accessToken);
+        setAccessToken(res.accessToken || null);
         setIsLandingPage(false);
+        setIsDemoMode(false);
         try {
           localStorage.setItem('app_account_initialized', 'true');
         } catch {}
-        showToast(
-          language === 'id'
-            ? 'Terhubung ke Gmail! Menyinkronkan kotak masuk...'
-            : 'Connected to Gmail successfully! Syncing inbox...'
-        );
-        // Auto trigger first live sync
-        triggerSync(res.accessToken);
+        if (res.hasGmailScope && res.accessToken) {
+          showToast(
+            language === 'id'
+              ? 'Terhubung ke Gmail! Menyinkronkan kotak masuk...'
+              : 'Connected to Gmail successfully! Syncing inbox...'
+          );
+          triggerSync(res.accessToken);
+        } else {
+          showToast(
+            language === 'id'
+              ? 'Berhasil masuk dengan Akun Google!'
+              : 'Signed in with Google Account successfully!'
+          );
+        }
       }
     } catch (err: any) {
       console.error('Google Sign In Error:', err);
+      const parsed = parseAuthError(err);
+      setAuthError(parsed);
+      setIsAuthTroubleshootOpen(true);
       showToast(
         language === 'id'
-          ? 'Masuk dengan Google dibatalkan atau gagal.'
-          : 'Google sign-in cancelled or failed.'
+          ? `Perhatian: ${parsed.messageId}`
+          : `Sign-in notice: ${parsed.messageEn}`
       );
     } finally {
       setIsAuthenticating(false);
     }
+  };
+
+  const handleStandardLogin = async () => {
+    setIsAuthTroubleshootOpen(false);
+    await handleLogin({ includeGmail: false });
   };
 
   const handleLogout = async () => {
@@ -1662,8 +1748,17 @@ export default function App() {
     setAccessToken(null);
     setIsDemoMode(false);
     setIsLandingPage(true);
+    setAccounts([]);
+    setExpenses([]);
+    setBudgets([]);
+    setSyncLogs([]);
+    setInsights([]);
     try {
       localStorage.removeItem('app_account_initialized');
+      localStorage.removeItem('app_expenses');
+      localStorage.removeItem('app_bank_accounts');
+      localStorage.removeItem('app_budgets');
+      localStorage.removeItem('app_sync_logs');
     } catch (e) {
       console.warn('Logout storage clean warning:', e);
     }
@@ -1790,25 +1885,66 @@ export default function App() {
   const triggerSync = async (tokenOverride?: string) => {
     const token = tokenOverride || accessToken;
     setIsSyncing(true);
+    const syncExecutionTime = new Date();
+    const isInitialBackfill = !lastSyncTimestamp;
+
+    // Helper to persist sync timestamp across local storage, state, and Firestore
+    const recordSuccessfulSyncTimestamp = (completedAt: Date) => {
+      const completedIso = completedAt.toISOString();
+      setLastSyncTimestamp(completedIso);
+      setLastSynced(completedAt);
+      try {
+        localStorage.setItem('expensivemail_last_sync_timestamp', completedIso);
+      } catch (e) {
+        console.warn('Storage save last sync timestamp error:', e);
+      }
+      if (user?.uid) {
+        syncProfileToFirestore(user.uid, {
+          ...(userProfile || {
+            id: user.uid,
+            fullName: user.displayName || 'User',
+            email: user.email || '',
+            entityType: 'personal',
+            defaultCurrency: currency,
+            defaultLanguage: language,
+            monthlyBudgetGoal: 0,
+            selectedInstitutions: [],
+            syncCadence: 'realtime',
+            autoApprovalThreshold: 85,
+            enableLargeTxAlerts: true,
+            largeTxThreshold: 1000000,
+            enableWeeklyDigest: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }),
+          lastSyncTimestamp: completedIso,
+          updatedAt: completedIso,
+        });
+      }
+    };
 
     try {
       let rawEmails: any[] = [];
 
       if (token) {
-        // Real Gmail API with safe fallback
+        // Real Gmail API with dynamic 90-day backfill or incremental sync
         try {
-          const fetchResult = await fetchInboxExpenseEmails(token, 25);
-          rawEmails = fetchResult.messages;
+          const fetchResult = await fetchInboxExpenseEmails(token, {
+            maxResults: isInitialBackfill ? 100 : 25,
+            lastSyncTime: lastSyncTimestamp
+              ? new Date(lastSyncTimestamp)
+              : null,
+            syncExecutionTime,
+            paginateAll: isInitialBackfill,
+          });
+          rawEmails = fetchResult.messages || [];
         } catch (fetchErr) {
-          console.warn(
-            'Live Gmail fetch notice, using incoming demo stream:',
-            fetchErr
-          );
+          console.warn('Live Gmail fetch notice:', fetchErr);
         }
       }
 
-      if (rawEmails.length === 0) {
-        // If not logged in or no new messages from real inbox, use incoming demo feed
+      // STRICT TRUST RULE: Demo emails may ONLY be used if there is NO authenticated user AND demo mode is active
+      if (rawEmails.length === 0 && !user && isDemoMode) {
         rawEmails = DEMO_INCOMING_EMAILS.map((d) => ({
           id: d.id,
           threadId: d.id,
@@ -1836,7 +1972,7 @@ export default function App() {
               : 'Inbox scanned — No new transaction receipts found.',
         };
         setSyncLogs((prev) => [logEntry, ...prev.slice(0, 19)]);
-        setLastSynced(new Date());
+        recordSuccessfulSyncTimestamp(syncExecutionTime);
         setIsSyncing(false);
         return;
       }
@@ -1915,7 +2051,7 @@ export default function App() {
               : `Scanned ${rawEmails.length} emails — All promotional, processed, or blocked emails were safely ignored.`,
         };
         setSyncLogs((prev) => [logEntry, ...prev.slice(0, 19)]);
-        setLastSynced(new Date());
+        recordSuccessfulSyncTimestamp(syncExecutionTime);
         setIsSyncing(false);
         return;
       }
@@ -1925,8 +2061,17 @@ export default function App() {
       const clientRejectedForReview: PendingReviewEmail[] = [];
 
       for (const email of eligibleEmails) {
-        const fromHeader = email.headers?.from || email.from || '';
-        const prov = verifySenderProvenance(fromHeader, userTrustedRules);
+        const prov = verifySenderProvenance(
+          email,
+          userTrustedRules,
+          [],
+          accounts
+        );
+
+        if (prov.isBlockedUntrusted) {
+          continue;
+        }
+
         if (prov.isVerified) {
           verifiedProvenanceEmails.push(email);
         } else if (
@@ -1940,12 +2085,12 @@ export default function App() {
               email.headers?.subject ||
               email.subject ||
               'Untrusted Sender Email',
-            sender: fromHeader,
+            sender: email.headers?.from || email.from || 'Unknown Sender',
             senderDomain: prov.senderDomain || 'unknown',
             date: email.headers?.date || email.date || new Date().toISOString(),
             snippet: email.snippet,
             body: email.bodyText || email.body,
-            reason: 'unverified_domain',
+            reason: prov.flagType || 'unverified_domain',
             failureDetails:
               prov.failureReason ||
               'Sender domain is not on verified merchant/bank allowlist',
@@ -1979,6 +2124,7 @@ export default function App() {
               body: JSON.stringify({
                 emails: verifiedProvenanceEmails,
                 knownBankAccounts: accounts,
+                bankAccounts: accounts,
                 userTrustedRules,
               }),
             },
@@ -2172,6 +2318,7 @@ export default function App() {
         if (user?.uid) {
           syncLogToFirestore(user.uid, logEntry);
         }
+        recordSuccessfulSyncTimestamp(syncExecutionTime);
         showToast(
           language === 'id'
             ? `Sinkronisasi selesai: +${parsedExpenses.length} pengeluaran berhasil dicatat!`
@@ -2191,29 +2338,27 @@ export default function App() {
               : `Scanned ${rawEmails.length} messages. No new financial receipts detected.`,
         };
         setSyncLogs((prev) => [logEntry, ...prev.slice(0, 19)]);
+        recordSuccessfulSyncTimestamp(syncExecutionTime);
       }
-
-      setLastSynced(new Date());
     } catch (err: any) {
-      console.warn(
-        'Sync processed with resilient fallback:',
-        err?.message || err
-      );
+      console.warn('Sync processing notice:', err?.message || err);
       const logEntry: SyncLog = {
         id: `log_${Date.now()}`,
         timestamp: new Date().toISOString(),
-        status: 'success',
-        emailsScanned: DEMO_INCOMING_EMAILS.length,
+        status: 'failed',
+        emailsScanned: 0,
         expensesFound: 0,
         totalAmountParsed: 0,
         message:
           language === 'id'
-            ? 'Sinkronisasi selesai (mode pencadangan aktif)'
-            : 'Sync processed with resilient fallback mode',
+            ? 'Sinkronisasi email mengalami kendala jaringan atau izin.'
+            : 'Email sync encountered a network or permission issue.',
       };
       setSyncLogs((prev) => [logEntry, ...prev.slice(0, 19)]);
       showToast(
-        language === 'id' ? 'Sinkronisasi email aktif.' : 'Mail sync active.'
+        language === 'id'
+          ? 'Sinkronisasi email mengalami kendala.'
+          : 'Email sync encountered an issue.'
       );
     } finally {
       setIsSyncing(false);
@@ -2261,7 +2406,12 @@ export default function App() {
       };
 
       // STEP 2 PROVENANCE GATE: Check sender domain
-      const provenance = verifySenderProvenance(pseudoEmail.from);
+      const provenance = verifySenderProvenance(
+        pseudoEmail.from,
+        userTrustedRules,
+        [],
+        accounts
+      );
       if (!provenance.isVerified) {
         const unverifiedReview: PendingReviewEmail = {
           id: `rev_${pseudoEmail.id}`,
@@ -2491,7 +2641,71 @@ export default function App() {
   };
 
   const handleUpdateExpense = (updated: Expense) => {
+    const oldExpense = expenses.find((e) => e.id === updated.id);
     setExpenses((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+    if (updated.isAmountAnomaly === false) {
+      setDismissedAnomalyIds((prev) => {
+        const next = new Set(prev);
+        next.add(updated.id);
+        if (updated.emailId) next.add(updated.emailId);
+        if (updated.id.startsWith('exp_mail_')) {
+          next.add(updated.id.replace(/^exp_mail_/, ''));
+        }
+        return next;
+      });
+    }
+
+    // Reconcile bank balances if amount, account, or type changed
+    if (
+      oldExpense &&
+      (oldExpense.amount !== updated.amount ||
+        oldExpense.bankAccountId !== updated.bankAccountId ||
+        oldExpense.type !== updated.type)
+    ) {
+      setAccounts((prev) => {
+        const updatedAccounts = prev.map((acc) => {
+          let bal = acc.balance;
+          // Revert old transaction effect
+          if (oldExpense.bankAccountId === acc.id) {
+            if (acc.type === 'credit') {
+              bal =
+                oldExpense.type === 'debit'
+                  ? bal - oldExpense.amount
+                  : bal + oldExpense.amount;
+            } else {
+              bal =
+                oldExpense.type === 'debit'
+                  ? bal + oldExpense.amount
+                  : bal - oldExpense.amount;
+            }
+          }
+          // Apply new transaction effect
+          if (updated.bankAccountId === acc.id) {
+            if (acc.type === 'credit') {
+              bal =
+                updated.type === 'debit'
+                  ? bal + updated.amount
+                  : bal - updated.amount;
+            } else {
+              bal =
+                updated.type === 'debit'
+                  ? bal - updated.amount
+                  : bal + updated.amount;
+            }
+          }
+          return {
+            ...acc,
+            balance: Math.max(0, bal),
+            lastSyncedAt: new Date().toISOString(),
+          };
+        });
+        if (user?.uid) {
+          syncAccountsToFirestore(user.uid, updatedAccounts);
+        }
+        return updatedAccounts;
+      });
+    }
+
     if (user?.uid) {
       syncExpenseToFirestore(user.uid, updated);
     }
@@ -2505,6 +2719,38 @@ export default function App() {
   const handleDeleteExpense = (expenseId: string) => {
     const exp = expenses.find((e) => e.id === expenseId);
     setExpenses((prev) => prev.filter((e) => e.id !== expenseId));
+
+    // Revert bank account balance
+    if (exp?.bankAccountId) {
+      setAccounts((prev) => {
+        const updatedAccounts = prev.map((acc) => {
+          if (acc.id === exp.bankAccountId) {
+            let restored = acc.balance;
+            if (acc.type === 'credit') {
+              restored =
+                exp.type === 'debit'
+                  ? acc.balance - exp.amount
+                  : acc.balance + exp.amount;
+            } else {
+              restored =
+                exp.type === 'debit'
+                  ? acc.balance + exp.amount
+                  : acc.balance - exp.amount;
+            }
+            return {
+              ...acc,
+              balance: Math.max(0, restored),
+              lastSyncedAt: new Date().toISOString(),
+            };
+          }
+          return acc;
+        });
+        if (user?.uid) {
+          syncAccountsToFirestore(user.uid, updatedAccounts);
+        }
+        return updatedAccounts;
+      });
+    }
 
     // Permanently dismiss email and anomaly so syncing never re-imports deleted transactions
     const emailId =
@@ -2548,6 +2794,38 @@ export default function App() {
       .filter(Boolean) as string[];
 
     setExpenses((prev) => prev.filter((e) => !expenseIds.includes(e.id)));
+
+    // Revert balances for all batch deleted expenses
+    const accountDeltas = new Map<string, number>();
+    deletedExpenses.forEach((exp) => {
+      if (exp.bankAccountId) {
+        const current = accountDeltas.get(exp.bankAccountId) || 0;
+        const delta = exp.type === 'debit' ? exp.amount : -exp.amount;
+        accountDeltas.set(exp.bankAccountId, current + delta);
+      }
+    });
+
+    if (accountDeltas.size > 0) {
+      setAccounts((prev) => {
+        const updatedAccounts = prev.map((acc) => {
+          const delta = accountDeltas.get(acc.id);
+          if (delta !== undefined) {
+            const restored =
+              acc.type === 'credit' ? acc.balance - delta : acc.balance + delta;
+            return {
+              ...acc,
+              balance: Math.max(0, restored),
+              lastSyncedAt: new Date().toISOString(),
+            };
+          }
+          return acc;
+        });
+        if (user?.uid) {
+          syncAccountsToFirestore(user.uid, updatedAccounts);
+        }
+        return updatedAccounts;
+      });
+    }
 
     if (deletedEmailIds.length > 0) {
       setDismissedReviewEmailIds((prev) => {
@@ -2690,6 +2968,33 @@ export default function App() {
   };
 
   // Budget CRUD
+  const handleResetDefaultBudgets = () => {
+    const standardBudgets: BudgetCategory[] = DEFAULT_BUDGETS_IDR.map((b) => ({
+      ...b,
+      id:
+        'b_' +
+        String(b.category)
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '_'),
+      monthlyLimit: b.monthlyLimit,
+    }));
+
+    setBudgets(standardBudgets);
+    try {
+      localStorage.setItem('app_budgets', JSON.stringify(standardBudgets));
+    } catch (e) {
+      console.warn('LocalStorage save budgets error:', e);
+    }
+    if (user?.uid) {
+      syncBudgetsToFirestore(user.uid, standardBudgets);
+    }
+    showToast(
+      language === 'id'
+        ? 'Target anggaran standar berhasil diterapkan'
+        : 'Default category budgets applied successfully'
+    );
+  };
+
   const handleUpdateBudget = (category: ExpenseCategory, newLimit: number) => {
     setBudgets((prev) => {
       const exists = prev.some((b) => b.category === category);
@@ -2723,10 +3028,17 @@ export default function App() {
       }
       return updated;
     });
+
+    const displayLimit = convertCurrency(
+      newLimit,
+      'IDR',
+      currency,
+      exchangeRateDb.ratesToIDR
+    );
     showToast(
       language === 'id'
-        ? `Anggaran ${t.categories[category] || category} diubah ke ${formatCurrency(newLimit, currency)}`
-        : `Updated budget for ${category} to ${formatCurrency(newLimit, currency)}`
+        ? `Anggaran ${t.categories[category] || category} diubah ke ${formatCurrency(displayLimit, currency)}`
+        : `Updated budget for ${category} to ${formatCurrency(displayLimit, currency)}`
     );
   };
 
@@ -2744,6 +3056,39 @@ export default function App() {
       }
       return updated;
     });
+
+    // Retroactively link matching unlinked transactions
+    setExpenses((prevExpenses) => {
+      let hasUpdates = false;
+      const updatedExpenses = prevExpenses.map((exp) => {
+        if (exp.bankAccountId) return exp;
+        const inst = account.institution.toLowerCase();
+        const accName = account.name.toLowerCase();
+        const bName = (exp.bankAccountName || '').toLowerCase();
+        const pMethod = (exp.paymentMethod || '').toLowerCase();
+        const mask = account.accountNumberMask?.replace(/[^0-9]/g, '');
+        const isMatch =
+          (inst &&
+            (bName.includes(inst) ||
+              inst.includes(bName) ||
+              pMethod.includes(inst))) ||
+          (accName && (bName.includes(accName) || pMethod.includes(accName))) ||
+          (mask &&
+            mask.length === 4 &&
+            (pMethod.includes(mask) || bName.includes(mask)));
+        if (isMatch) {
+          hasUpdates = true;
+          const matchedExp = { ...exp, bankAccountId: account.id };
+          if (user?.uid) {
+            syncExpenseToFirestore(user.uid, matchedExp);
+          }
+          return matchedExp;
+        }
+        return exp;
+      });
+      return hasUpdates ? updatedExpenses : prevExpenses;
+    });
+
     showToast(`Linked ${account.name}`);
   };
 
@@ -2830,9 +3175,100 @@ export default function App() {
   const handleExploreDemo = React.useCallback(() => {
     setIsDemoMode(true);
     setIsLandingPage(false);
+    setAccounts(INITIAL_BANK_ACCOUNTS);
+    setExpenses(INITIAL_EXPENSES);
+    setBudgets([
+      { category: 'Dining & Food', monthlyLimit: 3000000, color: '#FF7043' },
+      { category: 'Groceries', monthlyLimit: 4000000, color: '#42A5F5' },
+      {
+        category: 'Shopping & Retail',
+        monthlyLimit: 2500000,
+        color: '#AB47BC',
+      },
+      {
+        category: 'Utilities & Bills',
+        monthlyLimit: 2000000,
+        color: '#26A69A',
+      },
+      {
+        category: 'Travel & Transportation',
+        monthlyLimit: 2000000,
+        color: '#FFA726',
+      },
+      {
+        category: 'Entertainment & Subscriptions',
+        monthlyLimit: 1500000,
+        color: '#EC407A',
+      },
+    ]);
   }, []);
 
-  // While Firebase Auth is initializing and checking persistent session
+  const handleGoToDashboard = React.useCallback(() => {
+    setIsLandingPage(false);
+  }, []);
+
+  const handleOpenGetStarted = React.useCallback(() => {
+    setIsCreateAccountModalOpen(true);
+  }, []);
+
+  const handleCloseGetStarted = React.useCallback(() => {
+    setIsCreateAccountModalOpen(false);
+  }, []);
+
+  // If user is on landing page view, show the Landing Page immediately (instant 0ms first paint)
+  if (isLandingPage) {
+    return (
+      <div className="min-h-[100dvh] bg-[#071524] text-[#E2E8F0] font-sans selection:bg-[#2251FF] selection:text-white">
+        <LandingPage
+          user={user}
+          onGoToDashboard={handleGoToDashboard}
+          onGetStarted={handleOpenGetStarted}
+          onGoogleSignIn={handleLogin}
+          onExploreDemo={handleExploreDemo}
+          language={language}
+          onLanguageChange={handleLanguageChange}
+          currency={currency}
+          onCurrencyChange={handleCurrencyChange}
+          isAuthenticating={isAuthenticating}
+          theme={theme}
+          onSelectTheme={setTheme}
+          onToggleTheme={handleToggleTheme}
+        />
+
+        {/* Modal for building executive account from landing page */}
+        <CreateAccountModal
+          isOpen={isCreateAccountModalOpen}
+          onClose={handleCloseGetStarted}
+          onAccountCreated={handleAccountCreated}
+          currentCurrency={currency}
+          currentLanguage={language}
+          t={t}
+          onOpenLogin={handleLogin}
+        />
+
+        {/* Troubleshooting modal for auth if initiated from landing */}
+        <AuthTroubleshootingModal
+          isOpen={isAuthTroubleshootOpen}
+          onClose={() => setIsAuthTroubleshootOpen(false)}
+          error={authError}
+          language={language}
+          onRetryGoogleSignIn={handleLogin}
+          onStandardGoogleSignIn={handleStandardLogin}
+          onContinueDemo={handleExploreDemo}
+        />
+
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className="fixed bottom-5 right-5 z-50 bg-[#051C2C] border border-[#1E3A5F] text-white text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 animate-in slide-in-from-bottom-5">
+            <CheckCircle2 className="w-4 h-4 text-[#2251FF] flex-shrink-0" />
+            <span>{toastMessage}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // While Firebase Auth is initializing and checking persistent session for dashboard view
   if (!isAuthReady) {
     return (
       <div className="min-h-[100dvh] bg-[#071524] text-slate-100 flex flex-col items-center justify-center p-6 select-none font-sans">
@@ -2851,46 +3287,6 @@ export default function App() {
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  // If user is not logged in and hasn't chosen demo mode, show the Landing Page
-  if (isLandingPage && !user && !isDemoMode) {
-    return (
-      <div className="min-h-[100dvh] bg-[#071524] text-[#E2E8F0] font-sans selection:bg-[#2251FF] selection:text-white">
-        <LandingPage
-          onGetStarted={() => setIsCreateAccountModalOpen(true)}
-          onGoogleSignIn={handleLogin}
-          onExploreDemo={handleExploreDemo}
-          language={language}
-          onLanguageChange={handleLanguageChange}
-          currency={currency}
-          onCurrencyChange={handleCurrencyChange}
-          isAuthenticating={isAuthenticating}
-          theme={theme}
-          onSelectTheme={(t) => setTheme(t)}
-          onToggleTheme={handleToggleTheme}
-        />
-
-        {/* Modal for building executive account from landing page */}
-        <CreateAccountModal
-          isOpen={isCreateAccountModalOpen}
-          onClose={() => setIsCreateAccountModalOpen(false)}
-          onAccountCreated={handleAccountCreated}
-          currentCurrency={currency}
-          currentLanguage={language}
-          t={t}
-          onOpenLogin={handleLogin}
-        />
-
-        {/* Toast Notification */}
-        {toastMessage && (
-          <div className="fixed bottom-5 right-5 z-50 bg-[#051C2C] border border-[#1E3A5F] text-white text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 animate-in slide-in-from-bottom-5">
-            <CheckCircle2 className="w-4 h-4 text-[#2251FF] flex-shrink-0" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
       </div>
     );
   }
@@ -2994,6 +3390,7 @@ export default function App() {
         onOpenAccountModal={() => setIsAccountModalOpen(true)}
         onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
         onOpenLanguageModal={() => setIsLanguageModalOpen(true)}
+        onOpenLandingPage={() => setIsLandingPage(true)}
         onExportCSV={handleExportCSV}
         onResetData={handleResetDemoData}
       />
@@ -3055,7 +3452,7 @@ export default function App() {
             ratesToIDR={exchangeRateDb.ratesToIDR}
             language={language}
             onSelectCategoryFilter={(cat) => {
-              // Category filter click handler
+              setSelectedCategoryFilter(cat || 'ALL');
               setActiveTab('dashboard');
             }}
           />
@@ -3133,8 +3530,11 @@ export default function App() {
               expenses={expenses}
               accounts={accounts}
               selectedAccountId={selectedAccountId}
+              onSelectAccount={(id) => setSelectedAccountId(id)}
               anomaliesMap={anomalyResult.anomaliesMap}
               initialFilterAnomaliesOnly={anomalyFilterInFeed}
+              categoryFilter={selectedCategoryFilter}
+              onCategoryFilterChange={(cat) => setSelectedCategoryFilter(cat)}
               onViewEmailDetail={(exp) => setViewingEmailExpense(exp)}
               onEditExpense={(exp) => setEditingExpense(exp)}
               onDeleteExpense={handleDeleteExpense}
@@ -3194,10 +3594,16 @@ export default function App() {
             expenses={expenses}
             budgets={budgets}
             onUpdateBudget={handleUpdateBudget}
+            onResetDefaultBudgets={handleResetDefaultBudgets}
             onOpenSetBudgetModal={() => setIsSetBudgetModalOpen(true)}
             currency={currency}
             ratesToIDR={exchangeRateDb.ratesToIDR}
             t={t}
+            language={language}
+            onSelectCategoryFilter={(cat) => {
+              setSelectedCategoryFilter(cat);
+              setActiveTab('dashboard');
+            }}
           />
         )}
       </main>
@@ -3228,6 +3634,7 @@ export default function App() {
           ratesToIDR={exchangeRateDb.ratesToIDR}
           language={language}
           t={t}
+          budgets={budgets}
         />
 
         <EmailDetailModal
@@ -3477,6 +3884,16 @@ export default function App() {
           currency={currency}
           language={language}
           t={t}
+        />
+
+        <AuthTroubleshootingModal
+          isOpen={isAuthTroubleshootOpen}
+          onClose={() => setIsAuthTroubleshootOpen(false)}
+          error={authError}
+          language={language}
+          onRetryGoogleSignIn={handleLogin}
+          onStandardGoogleSignIn={handleStandardLogin}
+          onContinueDemo={handleExploreDemo}
         />
       </Suspense>
     </div>

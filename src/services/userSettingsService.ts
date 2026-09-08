@@ -6,6 +6,7 @@ import {
   UserTrustedDomainRule,
   UserUntrustedDomainRule,
 } from '../types';
+import { sanitizeForFirestore } from './firestoreService';
 
 export interface UserSettingsConfig {
   budgets: BudgetCategory[];
@@ -38,8 +39,33 @@ export async function loadUserSettingsConfig(
 
     if (snap.exists()) {
       const data = snap.data() as UserSettingsConfig;
+      let existingBudgets = Array.isArray(data.budgets) ? data.budgets : [];
+
+      // If budgets array in config is empty, fallback to reading users/{userId}/budgets subcollection
+      if (existingBudgets.length === 0) {
+        try {
+          const budgetsSnap = await getDocs(
+            collection(db, `users/${userId}/budgets`)
+          );
+          if (!budgetsSnap.empty) {
+            existingBudgets = budgetsSnap.docs.map((d) => ({
+              id: d.id,
+              ...(d.data() as any),
+            }));
+            // Opportunistically backfill config with fetched budgets
+            setDoc(
+              configDocRef,
+              { budgets: existingBudgets, updatedAt: new Date().toISOString() },
+              { merge: true }
+            ).catch(() => {});
+          }
+        } catch {
+          // Ignore fallback error
+        }
+      }
+
       return {
-        budgets: Array.isArray(data.budgets) ? data.budgets : [],
+        budgets: existingBudgets,
         ingestionRules: Array.isArray(data.ingestionRules)
           ? data.ingestionRules
           : [],
@@ -97,7 +123,9 @@ export async function loadUserSettingsConfig(
     };
 
     // Save coalesced config document to Firestore
-    await setDoc(configDocRef, migratedConfig, { merge: true });
+    await setDoc(configDocRef, sanitizeForFirestore(migratedConfig), {
+      merge: true,
+    });
     return migratedConfig;
   } catch (err) {
     handleFirestoreError(
@@ -127,7 +155,9 @@ export async function saveUserSettingsConfig(
       updatedAt: new Date().toISOString(),
     };
 
-    await setDoc(configDocRef, updatedConfig, { merge: true });
+    await setDoc(configDocRef, sanitizeForFirestore(updatedConfig), {
+      merge: true,
+    });
     return true;
   } catch (err) {
     handleFirestoreError(

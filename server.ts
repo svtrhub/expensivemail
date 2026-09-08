@@ -312,7 +312,8 @@ function fallbackParseEmail(
     bodyText?: string;
   },
   userTrustedRules: any[] = [],
-  userUntrustedRules: any[] = []
+  userUntrustedRules: any[] = [],
+  knownBankAccounts: any[] = []
 ) {
   const subject = email.subject || '';
   const from = email.from || '';
@@ -327,7 +328,8 @@ function fallbackParseEmail(
   const provenance = verifySenderProvenance(
     from,
     userTrustedRules,
-    userUntrustedRules
+    userUntrustedRules,
+    knownBankAccounts
   );
   if (!provenance.isVerified) {
     return null;
@@ -654,6 +656,31 @@ function fallbackParseEmail(
     }
   }
 
+  // Match against known accounts
+  let matchedBankAccountId: string | undefined = undefined;
+  if (knownBankAccounts.length > 0) {
+    const matched = knownBankAccounts.find((acc: any) => {
+      const inst = (acc.institution || '').toLowerCase();
+      const accName = (acc.name || '').toLowerCase();
+      const bSource = bankSource.toLowerCase();
+      const pMethod = paymentMethod.toLowerCase();
+      return (
+        (inst &&
+          (bSource.includes(inst) ||
+            inst.includes(bSource) ||
+            pMethod.includes(inst))) ||
+        (accName && (bSource.includes(accName) || pMethod.includes(accName))) ||
+        (maskMatch &&
+          acc.accountNumberMask &&
+          acc.accountNumberMask.includes(maskMatch[1]))
+      );
+    });
+    if (matched) {
+      matchedBankAccountId = matched.id;
+      bankSource = matched.name || bankSource;
+    }
+  }
+
   // Extract Order / Reference Number if present
   const orderMatch = fullText.match(
     /(?:nomor\s+pesanan|order\s+id|no\.\s*pesanan|reference\s*no|nomor\s+transaksi)\s*:?\s*([A-Za-z0-9\.\-_]{6,30})/i
@@ -960,7 +987,9 @@ function fallbackParseEmail(
   // Tier 4: Merchant-Domain Consistency Cross-Check
   const crossCheck = crossCheckMerchantWithDomain(
     merchant,
-    provenance.senderDomain
+    provenance.senderDomain,
+    userTrustedRules,
+    knownBankAccounts
   );
   if (!crossCheck.isConsistent) {
     return null;
@@ -987,6 +1016,7 @@ function fallbackParseEmail(
     type: 'debit',
     paymentMethod,
     bankAccountName: bankSource,
+    bankAccountId: matchedBankAccountId,
     confidenceScore: 0.85,
     isRecurring,
     recurringFrequency: isRecurring ? (isAnnual ? 'yearly' : 'monthly') : null,
@@ -1171,12 +1201,10 @@ app.post('/api/parse-email-batch', aiEndpointsLimiter, async (req, res) => {
     } = req.body;
 
     if (!Array.isArray(emails)) {
-      return res
-        .status(400)
-        .json({
-          error: 'Invalid payload: emails must be an array',
-          expenses: [],
-        });
+      return res.status(400).json({
+        error: 'Invalid payload: emails must be an array',
+        expenses: [],
+      });
     }
 
     if (emails.length === 0) {
@@ -1197,6 +1225,16 @@ app.post('/api/parse-email-batch', aiEndpointsLimiter, async (req, res) => {
           : { from: e.from, subject: e.subject },
     }));
 
+    const boundedBankAccounts = Array.isArray(knownBankAccounts)
+      ? knownBankAccounts.slice(0, 30).map((acc: any) => ({
+          id: sanitizeText(acc.id || '', 64),
+          name: sanitizeForPrompt(acc.name || '', 100),
+          institution: sanitizeForPrompt(acc.institution || '', 80),
+          type: sanitizeText(acc.type || '', 30),
+          currency: sanitizeText(acc.currency || '', 10),
+        }))
+      : [];
+
     // SENDER PROVENANCE HARD GATE: Separate verified sender domains from unrecognized senders
     const verifiedSenderEmails: any[] = [];
     const pendingReviewEmails: any[] = [];
@@ -1205,7 +1243,8 @@ app.post('/api/parse-email-batch', aiEndpointsLimiter, async (req, res) => {
       const provenance = verifySenderProvenance(
         email,
         userTrustedRules,
-        userUntrustedRules
+        userUntrustedRules,
+        boundedBankAccounts
       );
 
       // Hard suppression: If the domain is marked in userUntrustedRules, permanently drop and skip
@@ -1268,22 +1307,19 @@ app.post('/api/parse-email-batch', aiEndpointsLimiter, async (req, res) => {
       });
     }
 
-    const boundedBankAccounts = Array.isArray(knownBankAccounts)
-      ? knownBankAccounts.slice(0, 30).map((acc: any) => ({
-          id: sanitizeText(acc.id || '', 64),
-          name: sanitizeForPrompt(acc.name || '', 100),
-          institution: sanitizeForPrompt(acc.institution || '', 80),
-          type: sanitizeText(acc.type || '', 30),
-          currency: sanitizeText(acc.currency || '', 10),
-        }))
-      : [];
-
     const gemini = getGeminiClient();
 
     if (!gemini || isGeminiQuotaExhausted()) {
       // Fallback if no API key or in quota cooldown - applies to verified senders only
       const parsed = verifiedSenderEmails
-        .map((e) => fallbackParseEmail(e, userTrustedRules, userUntrustedRules))
+        .map((e) =>
+          fallbackParseEmail(
+            e,
+            userTrustedRules,
+            userUntrustedRules,
+            boundedBankAccounts
+          )
+        )
         .filter((exp) => exp !== null);
       return res.json({
         expenses: parsed,
@@ -1475,7 +1511,8 @@ Return raw JSON array ONLY without markdown formatting or code blocks.`;
       const crossCheck = crossCheckMerchantWithDomain(
         claimedMerchant,
         senderDomain,
-        userTrustedRules
+        userTrustedRules,
+        boundedBankAccounts
       );
 
       if (!crossCheck.isConsistent) {
@@ -1508,6 +1545,29 @@ Return raw JSON array ONLY without markdown formatting or code blocks.`;
             : undefined,
         });
         continue;
+      }
+
+      // Match bank account
+      let resolvedBankAccountId: string | undefined = undefined;
+      if (
+        exp.matchedBankAccountId &&
+        boundedBankAccounts.some((a: any) => a.id === exp.matchedBankAccountId)
+      ) {
+        resolvedBankAccountId = exp.matchedBankAccountId;
+      } else if (boundedBankAccounts.length > 0) {
+        const found = boundedBankAccounts.find((acc: any) => {
+          const inst = (acc.institution || '').toLowerCase();
+          const accName = (acc.name || '').toLowerCase();
+          const pMethod = safePaymentMethod.toLowerCase();
+          const bName = safeBankAccountName.toLowerCase();
+          return (
+            (inst && (pMethod.includes(inst) || bName.includes(inst))) ||
+            (accName && (pMethod.includes(accName) || bName.includes(accName)))
+          );
+        });
+        if (found) {
+          resolvedBankAccountId = found.id;
+        }
       }
 
       completeExpenses.push({
@@ -1543,6 +1603,7 @@ Return raw JSON array ONLY without markdown formatting or code blocks.`;
         type: exp.type === 'credit' ? 'credit' : 'debit',
         paymentMethod: safePaymentMethod,
         bankAccountName: safeBankAccountName,
+        bankAccountId: resolvedBankAccountId,
         confidenceScore:
           typeof exp.confidenceScore === 'number'
             ? Math.min(Math.max(exp.confidenceScore, 0), 1)
@@ -1638,6 +1699,9 @@ Return raw JSON array ONLY without markdown formatting or code blocks.`;
     const userUntrustedRules = Array.isArray(req.body.userUntrustedRules)
       ? req.body.userUntrustedRules
       : [];
+    const fallbackBankAccounts = Array.isArray(req.body.bankAccounts)
+      ? req.body.bankAccounts
+      : [];
 
     const verifiedFallbackEmails: any[] = [];
     const unverifiedFallbackEmails: any[] = [];
@@ -1646,7 +1710,8 @@ Return raw JSON array ONLY without markdown formatting or code blocks.`;
       const prov = verifySenderProvenance(
         e,
         userTrustedRules,
-        userUntrustedRules
+        userUntrustedRules,
+        fallbackBankAccounts
       );
       if (prov.isVerified) {
         verifiedFallbackEmails.push({
@@ -1854,12 +1919,10 @@ app.post('/api/export-statement', (req, res) => {
     return res.json(statement);
   } catch (err: any) {
     console.error('Error generating audit statement:', err);
-    return res
-      .status(500)
-      .json({
-        error: 'Failed to generate audit statement',
-        details: err?.message,
-      });
+    return res.status(500).json({
+      error: 'Failed to generate audit statement',
+      details: err?.message,
+    });
   }
 });
 
@@ -2014,23 +2077,18 @@ app.post('/api/approve-sender-domain', async (req, res) => {
         console.warn(
           `[Server Security] 409 Conflict: Review item '${pendingEmailId}' has already been resolved and cannot be replayed.`
         );
-        return res
-          .status(409)
-          .json({
-            error:
-              'Review item has already been resolved and cannot be replayed',
-          });
+        return res.status(409).json({
+          error: 'Review item has already been resolved and cannot be replayed',
+        });
       }
 
       if (existingItem && existingItem.domain !== cleanDomain) {
         console.warn(
           `[Server Security] 400 Bad Request: Review item '${pendingEmailId}' domain (@${existingItem.domain}) does not match requested domain (@${cleanDomain})`
         );
-        return res
-          .status(400)
-          .json({
-            error: `Requested domain @${cleanDomain} does not match review record @${existingItem.domain}`,
-          });
+        return res.status(400).json({
+          error: `Requested domain @${cleanDomain} does not match review record @${existingItem.domain}`,
+        });
       }
 
       // Record / update pending review item status
@@ -2046,11 +2104,9 @@ app.post('/api/approve-sender-domain', async (req, res) => {
       console.warn(
         `[Server Security] 400 Bad Request: Domain '@${cleanDomain}' is not present in pending review queue (expected '@${expectedDomain}')`
       );
-      return res
-        .status(400)
-        .json({
-          error: `Domain @${cleanDomain} does not match pending review record (@${expectedDomain})`,
-        });
+      return res.status(400).json({
+        error: `Domain @${cleanDomain} does not match pending review record (@${expectedDomain})`,
+      });
     }
 
     const userRulesMap = getOrCreateUserRuleMap(userId);

@@ -220,6 +220,11 @@ export interface GmailRawMessage {
     from?: string;
     date?: string;
     to?: string;
+    'authentication-results'?: string;
+    'arc-authentication-results'?: string;
+    'received-spf'?: string;
+    'dkim-signature'?: string;
+    [key: string]: string | undefined;
   };
   bodyText?: string;
 }
@@ -252,6 +257,7 @@ export interface UserProfile {
   largeTxThreshold: number; // e.g. 1000000
   enableWeeklyDigest: boolean;
   avatarUrl?: string;
+  lastSyncTimestamp?: string;
   createdAt: string;
   updatedAt: string;
 }
