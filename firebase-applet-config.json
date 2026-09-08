@@ -1,7 +1,7 @@
 {
   "projectId": "expensivemail-391e7",
   "appId": "1:866055821668:web:d0ca296de9b69e6b474271",
-  "apiKey": "AIzaSyBfxoraf4sZI4O9hfRZRjjtVmCcHC__9fI",
+  "apiKey": "${FIREBASE_API_KEY}",
   "authDomain": "expensivemail-391e7.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-expensivemail-2a69e7e5-d5dc-438b-bd37-6bdacc2cb02d",
   "storageBucket": "expensivemail-391e7.firebasestorage.app",
